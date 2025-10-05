@@ -1,5 +1,6 @@
-> [!NOTE]
-Loungy is currently not in active development. As a new dad, my development resources have dwindled. For another amazing launcher built in rust check [Project Gauntlet](https://github.com/project-gauntlet/gauntlet). They do basically everything Loungy does, but better. Plus they already have a working plugin system!
+> [!WARNING]
+Loungy is currently not in active development. As a new dad, my development resources have dwindled.
+> Please check out both [Project Gauntlet](https://github.com/project-gauntlet/gauntlet) and [Vicinae](https://github.com/vicinaehq/vicinae) They do basically everything Loungy does, but better. Plus they already have a working plugin system!
 
 <h1 align="center">
 	<img src="./icons/icon_512x512@2x@2x.png" width="100" alt="Logo"/><br/>
@@ -24,7 +25,6 @@ https://github.com/MatthiasGrandl/Loungy/assets/50196894/d5c84579-77e6-4e0b-980a
 - [x] Clipboard manager
 - [x] Tailscale peer list
 - [x] Bitwarden password client (only viewing, not editing)
-- [x] Matrix Chat client (very early WIP)
 
 In the absence of a proper extension system (which is wanted, but still quite far out at this point) I am adding features I need, but that aren't universally useful behind cargo feature flags.
 
