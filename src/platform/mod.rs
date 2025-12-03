@@ -10,7 +10,7 @@
  */
 
 use crate::components::shared::Img;
-use gpui::{AppContext, AsyncAppContext, Global};
+use gpui::{App, AsyncApp, Global};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -19,9 +19,13 @@ pub use linux::*;
 use std::path::PathBuf;
 #[cfg(target_os = "macos")]
 mod mac;
+#[cfg(target_os = "windows")]
+mod window;
+
 #[cfg(target_os = "macos")]
 pub use mac::*;
-
+#[cfg(target_os = "windows")]
+pub use window::*;
 #[derive(Clone)]
 pub struct AppData {
     pub id: String,
@@ -36,20 +40,20 @@ pub struct ClipboardWatcher {
     enabled: bool,
 }
 impl ClipboardWatcher {
-    pub fn init(cx: &mut AppContext) {
+    pub fn init(cx: &mut App) {
         cx.set_global(Self { enabled: true });
     }
-    pub fn enabled(cx: &mut AsyncAppContext) {
+    pub fn enabled(cx: &mut AsyncApp) {
         let _ = cx.update_global::<Self, _>(|this, _| {
             this.enabled = true;
         });
     }
-    pub fn disabled(cx: &mut AsyncAppContext) {
+    pub fn disabled(cx: &mut AsyncApp) {
         let _ = cx.update_global::<Self, _>(|this, _| {
             this.enabled = false;
         });
     }
-    pub fn is_enabled(cx: &AsyncAppContext) -> bool {
+    pub fn is_enabled(cx: &AsyncApp) -> bool {
         cx.try_read_global::<Self, _>(|x, _| x.enabled)
             .unwrap_or(false)
     }

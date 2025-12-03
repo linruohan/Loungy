@@ -34,7 +34,7 @@ impl Input {
         id: impl ToString,
         label: impl ToString,
         kind: InputKind,
-        _: &mut WindowContext,
+        _: &mut Context<Self>,
     ) -> Self {
         Self {
             id: id.to_string(),
@@ -70,7 +70,7 @@ pub struct InputView {
 }
 
 impl Render for InputView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         //cx.focus(&self.focus_handle);
         let theme = cx.global::<Theme>();
         let fm = self.focus_model.clone();
@@ -205,7 +205,7 @@ impl Render for InputView {
 }
 
 impl InputView {
-    pub fn on_focus(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn on_focus(&mut self, cx: &mut Context<Self>) {
         //
         match self.inner.kind.clone() {
             InputKind::TextField {
@@ -221,11 +221,11 @@ impl InputView {
             InputKind::Shortcut { .. } => self.input.set_text("Record hotkey", cx),
         };
     }
-    pub fn on_blur(&mut self, _: &mut ViewContext<Self>) {
+    pub fn on_blur(&mut self, _: &mut Context<Self>) {
         self.inner.show_error = true;
         self.inner.validate();
     }
-    pub fn on_query(&mut self, event: &TextEvent, cx: &mut ViewContext<Self>) {
+    pub fn on_query(&mut self, event: &TextEvent, cx: &mut Context<Self>) {
         match self.inner.kind.clone() {
             InputKind::TextField {
                 validate,
@@ -303,7 +303,7 @@ impl InputView {
         query: TextInputWeak,
         index: usize,
         focus_model: Model<usize>,
-        cx: &mut WindowContext,
+        cx: &mut App,
     ) -> View<Self> {
         cx.new_view(|cx| {
             cx.observe(&focus_model, move |input: &mut InputView, focused, cx| {
@@ -358,7 +358,7 @@ pub enum InputKind {
     },
 }
 
-pub trait SubmitFn: Fn(HashMap<String, Input>, &mut Actions, &mut WindowContext) {
+pub trait SubmitFn: Fn(HashMap<String, Input>, &mut Actions, &mut App) {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
         Self: 'a;
@@ -366,7 +366,7 @@ pub trait SubmitFn: Fn(HashMap<String, Input>, &mut Actions, &mut WindowContext)
 
 impl<F> SubmitFn for F
 where
-    F: Fn(HashMap<String, Input>, &mut Actions, &mut WindowContext) + Clone,
+    F: Fn(HashMap<String, Input>, &mut Actions, &mut App) + Clone,
 {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
@@ -391,7 +391,7 @@ impl Form {
         inputs: Vec<Input>,
         submit: impl SubmitFn + 'static,
         context: &mut StateViewContext,
-        cx: &mut WindowContext,
+        cx: &mut App,
     ) -> View<Self> {
         let focus_model: Model<usize> = cx.new_model(|_| 0);
         let inputs: Vec<View<InputView>> = inputs
@@ -445,7 +445,7 @@ impl Form {
             list: ListState::new(
                 inputs.len(),
                 ListAlignment::Top,
-                Pixels(100.0),
+                px(100.0),
                 move |i, _| div().child(inputs[i].clone()).py_2().into_any_element(),
             ),
         })
@@ -453,7 +453,7 @@ impl Form {
 }
 
 impl Render for Form {
-    fn render(&mut self, _: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Context<Self>) -> impl IntoElement {
         div()
             .p_4()
             .size_full()

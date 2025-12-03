@@ -52,7 +52,7 @@ impl Accessory {
 }
 
 impl RenderOnce for Accessory {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         match self {
             Accessory::Tag { tag, img } => {
@@ -105,7 +105,7 @@ impl ListItem {
 }
 
 impl ItemComponent for ListItem {
-    fn render(&self, _selected: bool, cx: &WindowContext) -> AnyElement {
+    fn render(&self, _selected: bool, cx: &mut App) -> AnyElement {
         let theme = cx.global::<Theme>();
         let el = if let Some(img) = &self.img {
             div().child(div().mr_4().child(img.clone()))
@@ -144,7 +144,7 @@ impl ItemComponent for ListItem {
 }
 
 pub trait ItemComponent {
-    fn render(&self, selected: bool, cx: &WindowContext) -> AnyElement;
+    fn render(&self, selected: bool, cx: &App) -> AnyElement;
 }
 
 pub struct ItemBuilder {
@@ -364,7 +364,7 @@ pub struct List {
 }
 
 impl Render for List {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
         //let theme = cx.global::<Theme>();
         let (width, preview) = self
             .preview
@@ -396,7 +396,7 @@ impl Render for List {
 }
 
 impl List {
-    pub fn up(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn up(&mut self, cx: &mut Context<Self>) {
         if !self.query.has_focus(cx) {
             return;
         }
@@ -422,7 +422,7 @@ impl List {
         });
         self.state.scroll_to_reveal_item(index);
     }
-    pub fn down(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn down(&mut self, cx: &mut Context<Self>) {
         if !self.query.has_focus(cx) {
             return;
         }
@@ -461,7 +461,7 @@ impl List {
         self.selected(cx)
             .and_then(|(_, item)| item.actions.first().cloned())
     }
-    pub fn update(&mut self, no_scroll: bool, cx: &mut ViewContext<Self>) {
+    pub fn update(&mut self, no_scroll: bool, cx: &mut Context<Self>) {
         let update_fn = std::mem::replace(&mut self.update, Box::new(|_, _, _| Ok(None)));
         let result = update_fn(self, no_scroll, cx);
         self.update = update_fn;
@@ -478,7 +478,7 @@ impl List {
             }
         }
     }
-    pub fn filter(&mut self, _no_scroll: bool, cx: &mut ViewContext<Self>) {
+    pub fn filter(&mut self, _no_scroll: bool, cx: &mut Context<Self>) {
         let filter_fn = std::mem::replace(&mut self.filter, Box::new(|_, _| vec![]));
         let items = filter_fn(self, cx);
         self.filter = filter_fn;
@@ -507,7 +507,7 @@ impl List {
             self.reset_selection(cx);
         }
     }
-    pub fn reset_selection(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn reset_selection(&mut self, cx: &mut Context<Self>) {
         self.items.update(cx, |items, cx| {
             if items.is_empty() {
                 return;
@@ -522,7 +522,7 @@ impl List {
             });
             self.state.scroll_to(ListOffset {
                 item_ix: s,
-                offset_in_item: Pixels(0.0),
+                offset_in_item: px(0.0),
             })
         });
     }
@@ -548,7 +548,7 @@ impl List {
                 } else {
                     ListAlignment::Top
                 },
-                Pixels(20.0),
+                px(20.0),
                 {
                     let selected = selected.clone();
                     let items = items.clone();
@@ -651,7 +651,7 @@ impl List {
                         }
                         let triggered = update_receiver.try_recv().is_ok();
 
-                        let update = |this: &mut Self, cx: &mut ViewContext<Self>| {
+                        let update = |this: &mut Self, cx: &mut Context<Self>| {
                             this.update(triggered, cx);
                             last = std::time::Instant::now();
                         };
@@ -718,7 +718,7 @@ impl AsyncListItems {
             initialized: false,
         }
     }
-    pub fn update(&mut self, key: String, items: Vec<Item>, cx: &mut ViewContext<Self>) {
+    pub fn update(&mut self, key: String, items: Vec<Item>, cx: &mut Context<Self>) {
         self.items.insert(key, items);
         if !self.initialized {
             self.initialized = true;
@@ -727,7 +727,7 @@ impl AsyncListItems {
         cx.emit(AsyncListItemsEvent::Update);
         cx.notify();
     }
-    pub fn push(&mut self, key: String, item: Item, cx: &mut ViewContext<Self>) {
+    pub fn push(&mut self, key: String, item: Item, cx: &mut Context<Self>) {
         let items = self.items.entry(key).or_default();
         // check existing
         if let Some(i) = items.iter().position(|i| i.id.eq(&item.id)) {
@@ -741,7 +741,7 @@ impl AsyncListItems {
         cx.emit(AsyncListItemsEvent::Update);
         cx.notify();
     }
-    pub fn remove(&mut self, key: String, id: impl Hash, cx: &mut ViewContext<Self>) {
+    pub fn remove(&mut self, key: String, id: impl Hash, cx: &mut Context<Self>) {
         if let Some(items) = self.items.get_mut(&key) {
             let hash = {
                 let mut s = DefaultHasher::new();
@@ -776,7 +776,7 @@ impl AsyncListItems {
 }
 
 impl Render for AsyncListItems {
-    fn render(&mut self, _: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }

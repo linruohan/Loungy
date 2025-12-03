@@ -6,7 +6,7 @@ use async_std::{
     os::unix::net::{UnixListener, UnixStream},
 };
 use clap::{command, Arg, ValueEnum};
-use gpui::AsyncWindowContext;
+use gpui::{AsyncApp, AsyncApp};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -32,12 +32,12 @@ pub async fn setup_socket() -> anyhow::Result<UnixListener> {
 
 pub async fn start_server(
     listener: UnixListener,
-    mut cx: AsyncWindowContext,
+    cx: &mut AsyncApp,
 ) -> anyhow::Result<()> {
     let commands = cx.read_global::<RootCommands, _>(|commands, _| commands.clone())?;
     loop {
         let (stream, _) = listener.accept().await?;
-        cx.spawn(|cx| handle_client(stream, commands.clone(), cx))
+        cx.spawn(async move |window, cx| handle_client(stream, commands.clone(), cx))
             .detach();
     }
 }
@@ -45,7 +45,8 @@ pub async fn start_server(
 async fn handle_client(
     mut stream: UnixStream,
     commands: RootCommands,
-    mut cx: AsyncWindowContext,
+    _window: &mut Window,
+    cx: &mut AsyncApp,
 ) -> anyhow::Result<()> {
     // Send available commands to the client
     let bytes = serde_json::to_vec(&commands)?;
@@ -56,7 +57,7 @@ async fn handle_client(
 
     let matches: CommandPayload = serde_json::from_slice(&buf[..n])?;
 
-    let _ = cx.update::<anyhow::Result<()>>(|cx| {
+    let _ = cx.update::<anyhow::Result<()>>(|window, cx| {
         match matches.action {
             TopLevelCommand::Toggle => {
                 Window::toggle(cx);

@@ -30,7 +30,7 @@ impl Workspace {
 }
 
 impl Render for Workspace {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         let stack: &Vec<StateItem> = self.state.inner.read(cx).stack.as_ref();
         let item = stack.last().unwrap();

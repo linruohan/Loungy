@@ -378,7 +378,7 @@ struct ClipboardPreview {
     id: u64,
     item: ClipboardListItem,
     detail: ClipboardDetail,
-    bounds: Model<Bounds<Pixels>>,
+    bounds: Model<Bounds<px>>,
     state: ListState,
 }
 
@@ -403,7 +403,7 @@ impl ClipboardPreview {
             state: ListState::new(
                 1,
                 ListAlignment::Top,
-                Pixels(100.0),
+                px(100.0),
                 move |_, cx| match detail.kind.clone() {
                     ClipboardKind::Text { text, .. } | ClipboardKind::Url { url: text, .. } => {
                         div().p_2().w_full().child(text.clone()).into_any_element()
@@ -440,11 +440,11 @@ impl ClipboardPreview {
                         div()
                             .child(
                                 img(ImageSource::File(Arc::new(path.clone())))
-                                    .w(Pixels(w))
-                                    .h(Pixels(h)),
+                                    .w(px(w))
+                                    .h(px(h)),
                             )
-                            .pl(Pixels(ml))
-                            .pt(Pixels(mt))
+                            .pl(px(ml))
+                            .pt(px(mt))
                             .size_full()
                             .into_any_element()
                     }
@@ -455,7 +455,7 @@ impl ClipboardPreview {
 }
 
 impl Render for ClipboardPreview {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
 
         let mut table = vec![

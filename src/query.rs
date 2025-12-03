@@ -19,11 +19,11 @@ use crate::theme::Theme;
 #[derive(IntoElement, Clone)]
 pub struct TextInput {
     pub focus_handle: FocusHandle,
-    pub view: View<TextView>,
+    pub view: Entity<TextView>,
 }
 
 impl TextInput {
-    pub fn new(cx: &mut WindowContext) -> Self {
+    pub fn new(cx: &mut App) -> Self {
         let focus_handle = cx.focus_handle();
         let view = TextView::init(cx, &focus_handle);
         Self { focus_handle, view }
@@ -39,39 +39,39 @@ impl TextInput {
 #[derive(Clone)]
 pub struct TextInputWeak {
     pub focus_handle: FocusHandle,
-    pub view: WeakView<TextView>,
+    pub view: WeakEntity<TextView>,
 }
 
 impl TextInputWeak {
-    pub fn get_text(&self, cx: &WindowContext) -> String {
+    pub fn get_text(&self, cx: &App) -> String {
         if let Some(view) = self.view.upgrade() {
             return view.read(cx).text.clone();
         }
         "".to_string()
     }
-    pub fn set_placeholder<C: VisualContext>(&self, placeholder: impl ToString, cx: &mut C) {
+    pub fn set_placeholder<C: AppContext>(&self, placeholder: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.placeholder = placeholder.to_string();
                 cx.notify();
             });
         }
     }
-    pub fn set_text<C: VisualContext>(&self, text: impl ToString, cx: &mut C) {
+    pub fn set_text<C: AppContext>(&self, text: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.set_text(text, cx);
             });
         }
     }
-    pub fn set_masked<C: VisualContext>(&self, masked: bool, cx: &mut C) {
+    pub fn set_masked<C: AppContext>(&self, masked: bool, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.set_masked(masked, cx);
             });
         }
     }
-    pub fn has_focus(&self, cx: &WindowContext) -> bool {
+    pub fn has_focus(&self, cx: &Context<Self>) -> bool {
         if let Some(fh) = cx.focused() {
             return fh.eq(&self.focus_handle);
         }
@@ -88,7 +88,7 @@ pub struct TextView {
 }
 
 impl TextView {
-    pub fn init(cx: &mut WindowContext, focus_handle: &FocusHandle) -> View<Self> {
+    pub fn init(cx: &mut App, focus_handle: &FocusHandle) -> Entity<Self> {
         let m = Self {
             text: "".to_string(),
             selection: 0..0,
@@ -96,7 +96,7 @@ impl TextView {
             placeholder: "Type here...".to_string(),
             masked: false,
         };
-        let view = cx.new_view(|cx| {
+        let view = cx.new(|cx| {
             #[cfg(debug_assertions)]
             cx.on_release(|_, _, _| debug!("Text Input released"))
                 .detach();
@@ -120,7 +120,7 @@ impl TextView {
         .detach();
         view
     }
-    pub fn set_text(&mut self, text: impl ToString, cx: &mut ViewContext<Self>) {
+    pub fn set_text(&mut self, text: impl ToString, cx: &mut Context<Self>) {
         self.text = text.to_string();
         self.selection = self.text.len()..self.text.len();
         cx.notify();
@@ -128,12 +128,12 @@ impl TextView {
             text: self.text.clone(),
         });
     }
-    pub fn set_masked(&mut self, masked: bool, cx: &mut ViewContext<Self>) {
+    pub fn set_masked(&mut self, masked: bool, cx: &mut Context<Self>) {
         self.masked = masked;
         cx.notify();
     }
 
-    pub fn reset(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn reset(&mut self, cx: &mut Context<Self>) {
         self.text = "".to_string();
         self.selection = 0..0;
         cx.notify();
@@ -154,7 +154,7 @@ impl TextView {
             .len();
         start..end
     }
-    pub fn select_all(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn select_all(&mut self, cx: &mut Context<Self>) {
         self.selection = 0..self.text.chars().count();
         cx.notify();
     }
@@ -333,7 +333,8 @@ impl RenderOnce for TextInput {
 }
 
 impl Render for TextView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+
         let theme = cx.global::<Theme>();
 
         let mut text = self.text.clone();
@@ -359,8 +360,8 @@ impl Render for TextView {
         }
 
         let styled_text = StyledText::new(text + " ").with_highlights(&style, highlights);
-        let view = cx.view().clone();
-        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, cx| {
+        let view = cx.notify();
+        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, window, cx| {
             view.update(cx, |editor, cx| {
                 let (index, mut count) = editor.word_click;
                 if index == ev {

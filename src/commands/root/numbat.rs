@@ -128,7 +128,7 @@ impl ItemComponent for NumbatWrapper {
 }
 
 impl Render for Numbat {
-    fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, cx: &mut gpui::Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         if self.result.is_none() {
             return div();

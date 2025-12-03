@@ -47,7 +47,7 @@ pub enum ImgSource {
     Base(ImageSource),
     Icon { icon: Icon, color: Option<Hsla> },
     Dot(Hsla),
-    Favicon(View<Favicon>),
+    Favicon(Entity<Favicon>),
     None,
 }
 
@@ -126,17 +126,17 @@ impl Img {
         self.src = ImgSource::Dot(color);
         self
     }
-    pub fn favicon(mut self, url: impl ToString, fallback: Icon, cx: &mut WindowContext) -> Self {
+    pub fn favicon(mut self, url: impl ToString, fallback: Icon, cx: &mut App) -> Self {
         let favicon = Favicon::new(&self, url, fallback, cx);
         self.src = ImgSource::Favicon(favicon);
         self
     }
     pub fn file(mut self, src: PathBuf) -> Self {
-        self.src = ImgSource::Base(ImageSource::File(Arc::new(src)));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::from(Arc::new(src))));
         self
     }
     pub fn url(mut self, src: impl ToString) -> Self {
-        self.src = ImgSource::Base(ImageSource::Uri(SharedUri::from(src.to_string())));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::from(SharedUri::from(src.to_string()))));
         self
     }
     pub fn mask(mut self, mask: ImgMask) -> Self {
@@ -150,7 +150,7 @@ impl Img {
 }
 
 impl RenderOnce for Img {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         if let ImgSource::Favicon(favicon) = &self.src {
             return favicon.clone().into_any_element();
         }
@@ -223,7 +223,7 @@ impl RenderOnce for Img {
 pub struct NoView;
 
 impl Render for NoView {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }
@@ -338,7 +338,7 @@ impl Favicon {
 }
 
 impl Render for Favicon {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _cx: &mut Context<Self>) -> impl IntoElement {
         if let Some(task) = self
             .task
             .get_or_init(|| {

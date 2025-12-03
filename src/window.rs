@@ -25,25 +25,25 @@ pub enum WindowStyle {
 }
 
 impl WindowStyle {
-    pub fn options(&self, bounds: Bounds<Pixels>) -> WindowOptions {
+    pub fn options(&self, bounds: Bounds<px>) -> WindowOptions {
         let mut options = WindowOptions::default();
         let center = bounds.center();
 
         let (width, height, x, y) = match self {
             WindowStyle::Main => {
                 options.focus = true;
-                let width = Pixels::from(WIDTH);
-                let height = Pixels::from(HEIGHT);
-                let x: Pixels = center.x - width / 2.0;
-                let y: Pixels = center.y - height / 2.0;
+                let width = px::from(WIDTH);
+                let height = px::from(HEIGHT);
+                let x: px = center.x - width / 2.0;
+                let y: px = center.y - height / 2.0;
                 (width, height, x, y)
             }
             WindowStyle::Toast { width, height } => {
                 options.focus = false;
-                let width = Pixels::from(*width);
-                let height = Pixels::from(*height);
-                let x: Pixels = center.x - width / 2.0;
-                let y: Pixels = bounds.bottom() - height - Pixels::from(200.0);
+                let width = px::from(*width);
+                let height = px::from(*height);
+                let x: px = center.x - width / 2.0;
+                let y: px = bounds.bottom() - height - px::from(200.0);
                 (width, height, x, y)
             }
             WindowStyle::Settings => {

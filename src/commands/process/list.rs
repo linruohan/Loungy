@@ -75,7 +75,7 @@ pub struct ProcessListBuilder;
 command!(ProcessListBuilder);
 
 impl StateViewBuilder for ProcessListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search for running processes...", cx);
@@ -222,7 +222,7 @@ pub struct ProcessCommandBuilder;
 command!(ProcessCommandBuilder);
 
 impl RootCommandBuilder for ProcessCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "task_manager",
             "Search Processes",
