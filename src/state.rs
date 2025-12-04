@@ -71,6 +71,11 @@ pub enum ToastState {
 impl ToastState {
     fn dot(color: Hsla) -> AnyElement {
         let size = px(6.0);
+        let ping_color = {
+            let mut ping = color;
+            ping.a = 0.3; // 降低透明度
+            ping
+        };
         div()
             .size_6()
             .flex()
@@ -93,7 +98,7 @@ impl ToastState {
                                 let delta = (delta - 0.75) * 4.0;
                                 let mut color = color;
                                 color.a = 1.0 - delta;
-                                let size = px(size.0 * delta * 2.0 + size.0);
+                                let size = Pixels::from(size.0 * delta * 2.0 + size.0);
                                 div.bg(color).size(size)
                             }
                         },
@@ -454,10 +459,7 @@ impl StateModel {
             f(this, cx);
         });
     }
-    pub fn update_async(
-        f: impl FnOnce(&mut Self, &mut App),
-        cx: &mut AsyncWindowContext,
-    ) {
+    pub fn update_async(f: impl FnOnce(&mut Self, &mut App), cx: &mut AsyncWindowContext) {
         let _ = cx.update_global::<Self, _>(|this, cx| {
             f(this, cx);
         });
@@ -681,7 +683,7 @@ pub struct Action {
 }
 
 impl RenderOnce for Action {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _: &mut Window, _cx: &mut App) -> impl IntoElement {
         let shortcut = if let Some(shortcut) = self.shortcut {
             div().child(shortcut)
         } else {

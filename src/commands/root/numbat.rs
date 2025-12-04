@@ -49,7 +49,7 @@ fn rephraser(s: &str) -> String {
 }
 
 impl Numbat {
-    pub fn init(query: &TextInputWeak, cx: &mut WindowContext) -> View<Numbat> {
+    pub fn init(query: &TextInputWeak, cx: &mut App) -> Entity<Numbat> {
         let importer = BuiltinModuleImporter::default();
         let mut ctx = Context::new(importer);
         ctx.load_currency_module_on_demand(true);
@@ -118,17 +118,17 @@ impl Numbat {
 
 #[derive(Clone)]
 pub struct NumbatWrapper {
-    pub inner: View<Numbat>,
+    pub inner: Entity<Numbat>,
 }
 
 impl ItemComponent for NumbatWrapper {
-    fn render(&self, _selected: bool, _cx: &WindowContext) -> AnyElement {
+    fn render(&self, _selected: bool, _cx: &App) -> AnyElement {
         self.inner.clone().into_any_element()
     }
 }
 
 impl Render for Numbat {
-    fn render(&mut self, cx: &mut gpui::Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         if self.result.is_none() {
             return div();

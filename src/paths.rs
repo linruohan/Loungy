@@ -136,7 +136,10 @@ fn get_user_home_dir(username: &str) -> PathBuf {
         }
     }
 }
-fn get_standard_paths(user_dir: &PathBuf, app_name: &str) -> (PathBuf, PathBuf, PathBuf, PathBuf, PathBuf) {
+fn get_standard_paths(
+    user_dir: &PathBuf,
+    app_name: &str,
+) -> (PathBuf, PathBuf, PathBuf, PathBuf, PathBuf) {
     #[cfg(target_os = "macos")]
     {
         (

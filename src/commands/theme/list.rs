@@ -30,7 +30,7 @@ pub struct ThemeListBuilder;
 command!(ThemeListBuilder);
 
 impl StateViewBuilder for ThemeListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search for themes...", cx);
         ListBuilder::new()
             .interval(Duration::from_secs(10))
@@ -141,7 +141,7 @@ pub struct ThemeCommandBuilder;
 command!(ThemeCommandBuilder);
 
 impl RootCommandBuilder for ThemeCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "themes",
             "Search Themes",

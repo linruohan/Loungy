@@ -155,7 +155,7 @@ pub struct ItemBuilder {
     keywords: Vec<SharedString>,
     component: Rc<dyn ItemComponent>,
     preset: ItemPreset,
-    meta: Option<AnyModel>,
+    meta: Option<AnyEntity>,
 }
 
 impl ItemBuilder {
@@ -178,7 +178,7 @@ impl ItemBuilder {
         self.preview = Some((width, Rc::new(preview)));
         self
     }
-    pub fn meta(mut self, meta: AnyModel) -> Self {
+    pub fn meta(mut self, meta: AnyEntity) -> Self {
         self.meta = Some(meta);
         self
     }
@@ -231,11 +231,11 @@ pub struct Item {
     component: Rc<dyn ItemComponent>,
     selected: bool,
     preset: ItemPreset,
-    pub meta: Option<AnyModel>,
+    pub meta: Option<AnyEntity>,
 }
 
 impl Item {
-    pub fn get_meta<V: Clone + 'static>(&self, cx: &AppContext) -> Option<V> {
+    pub fn get_meta<V: Clone + 'static>(&self, cx: &App) -> Option<V> {
         self.meta
             .clone()
             .and_then(|m| m.downcast::<V>().ok())
@@ -247,11 +247,11 @@ impl Item {
     }
 }
 
-pub trait Preview: Fn(&mut WindowContext) -> StateItem + 'static {}
-impl<F> Preview for F where F: Fn(&mut WindowContext) -> StateItem + 'static {}
+pub trait Preview: Fn(&mut App) -> StateItem + 'static {}
+impl<F> Preview for F where F: Fn(&mut App) -> StateItem + 'static {}
 
 impl RenderOnce for Item {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         match self.preset {
             ItemPreset::Plain => self.component.render(self.selected, cx),
             ItemPreset::Default => {
@@ -273,7 +273,7 @@ impl RenderOnce for Item {
     }
 }
 
-type ScrollHandler = Option<Box<dyn FnMut(&ListScrollEvent, &mut WindowContext)>>;
+type ScrollHandler = Option<Box<dyn FnMut(&ListScrollEvent, &mut App)>>;
 
 pub struct ListBuilder {
     reverse: bool,
@@ -314,7 +314,7 @@ impl ListBuilder {
     }
     pub fn scroll_handler(
         mut self,
-        handler: impl FnMut(&ListScrollEvent, &mut WindowContext) + 'static,
+        handler: impl FnMut(&ListScrollEvent, &mut App) + 'static,
     ) -> Self {
         self.scroll_handler = Some(Box::new(handler));
         self
@@ -323,8 +323,8 @@ impl ListBuilder {
         self,
         update: impl UpdateList + 'static,
         context: &mut StateViewContext,
-        cx: &mut WindowContext,
-    ) -> View<List> {
+        cx: &mut App,
+    ) -> Entity<List> {
         List::new(
             Box::new(update),
             self.filter,
@@ -339,23 +339,23 @@ impl ListBuilder {
 }
 
 pub trait UpdateList:
-    Fn(&mut List, bool, &mut ViewContext<List>) -> anyhow::Result<Option<Vec<Item>>>
+    Fn(&mut List, bool, &mut Context<List>) -> anyhow::Result<Option<Vec<Item>>>
 {
 }
 impl<F> UpdateList for F where
-    F: Fn(&mut List, bool, &mut ViewContext<List>) -> anyhow::Result<Option<Vec<Item>>>
+    F: Fn(&mut List, bool, &mut Context<List>) -> anyhow::Result<Option<Vec<Item>>>
 {
 }
 
-pub trait FilterList: Fn(&mut List, &mut ViewContext<List>) -> Vec<Item> {}
-impl<F> FilterList for F where F: Fn(&mut List, &mut ViewContext<List>) -> Vec<Item> {}
+pub trait FilterList: Fn(&mut List, &mut Context<List>) -> Vec<Item> {}
+impl<F> FilterList for F where F: Fn(&mut List, &mut Context<List>) -> Vec<Item> {}
 
 pub struct List {
     state: ListState,
-    selected: Model<u64>,
+    selected: Entity<u64>,
     pub actions: ActionsModel,
     pub items_all: Vec<Item>,
-    pub items: Model<Vec<Item>>,
+    pub items: Entity<Vec<Item>>,
     pub query: TextInputWeak,
     pub update: Box<dyn UpdateList>,
     pub filter: Box<dyn FilterList>,
@@ -364,7 +364,7 @@ pub struct List {
 }
 
 impl Render for List {
-    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         //let theme = cx.global::<Theme>();
         let (width, preview) = self
             .preview
@@ -447,7 +447,7 @@ impl List {
         });
         self.state.scroll_to_reveal_item(index);
     }
-    pub fn selected(&self, cx: &AppContext) -> Option<(usize, Item)> {
+    pub fn selected(&self, cx: &App) -> Option<(usize, Item)> {
         let id = self.selected.read(cx);
 
         self.items
@@ -457,7 +457,7 @@ impl List {
             .enumerate()
             .find(|(_, item)| item.id.eq(id))
     }
-    pub fn default_action(&self, cx: &AppContext) -> Option<Action> {
+    pub fn default_action(&self, cx: &App) -> Option<Action> {
         self.selected(cx)
             .and_then(|(_, item)| item.actions.first().cloned())
     }
@@ -535,11 +535,11 @@ impl List {
         reverse: bool,
         scroll_handler: ScrollHandler,
         context: &mut StateViewContext,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
+        cx: &mut App,
+    ) -> Entity<Self> {
         let (selection_sender, r) = channel::<u64>();
         let selected = cx.new_model(|_| 0);
-        let items: Model<Vec<Item>> = cx.new_model(|_| vec![]);
+        let items: Entity<Vec<Item>> = cx.new_model(|_| vec![]);
         let mut list = Self {
             state: ListState::new(
                 0,
@@ -548,7 +548,7 @@ impl List {
                 } else {
                     ListAlignment::Top
                 },
-                px(20.0),
+                Pixels(20.0),
                 {
                     let selected = selected.clone();
                     let items = items.clone();
@@ -602,7 +602,7 @@ impl List {
 
         let update_receiver = context.update_receiver.clone();
         let view = cx.new_view(move |cx| {
-            cx.observe(&list.selected, move |this: &mut List, _, cx| {
+            cx.observe(&list.selected, move |this: &mut List, _, cx: &mut App| {
                 if let Some((_, selected)) = this.selected(cx) {
                     let preview = if let Some(preview) = selected.preview.as_ref() {
                         if !selected
@@ -755,7 +755,7 @@ impl AsyncListItems {
             }
         }
     }
-    pub fn loader(view: &View<Self>, actions: &ActionsModel, cx: &mut WindowContext) {
+    pub fn loader(view: &Entity<Self>, actions: &ActionsModel, cx: &mut App) {
         if let Some(a) = actions.inner.upgrade() {
             let init = view.read(cx).initialized;
             let a = a.read(cx).clone();
@@ -776,7 +776,7 @@ impl AsyncListItems {
 }
 
 impl Render for AsyncListItems {
-    fn render(&mut self, _: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }

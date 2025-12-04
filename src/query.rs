@@ -11,6 +11,7 @@
 
 use std::ops::Range;
 
+use crate::components::list::List;
 use gpui::*;
 use log::debug;
 
@@ -71,7 +72,7 @@ impl TextInputWeak {
             });
         }
     }
-    pub fn has_focus(&self, cx: &Context<Self>) -> bool {
+    pub fn has_focus(&self, cx: &mut Context<crate::components::list::List>) -> bool {
         if let Some(fh) = cx.focused() {
             return fh.eq(&self.focus_handle);
         }
@@ -334,7 +335,6 @@ impl RenderOnce for TextInput {
 
 impl Render for TextView {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-
         let theme = cx.global::<Theme>();
 
         let mut text = self.text.clone();
@@ -361,31 +361,34 @@ impl Render for TextView {
 
         let styled_text = StyledText::new(text + " ").with_highlights(&style, highlights);
         let view = cx.notify();
-        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, window, cx| {
-            view.update(cx, |editor, cx| {
-                let (index, mut count) = editor.word_click;
-                if index == ev {
-                    count += 1;
-                } else {
-                    count = 1;
-                }
-                match count {
-                    2 => {
-                        let word_ranges = editor.word_ranges();
-                        editor.selection = word_ranges.get(ev).unwrap().clone();
+        InteractiveText::new("text", styled_text).on_click(
+            self.word_ranges(),
+            move |ev, window, cx| {
+                view.update(cx, |editor, cx| {
+                    let (index, mut count) = editor.word_click;
+                    if index == ev {
+                        count += 1;
+                    } else {
+                        count = 1;
                     }
-                    3 => {
-                        // Should select the line
+                    match count {
+                        2 => {
+                            let word_ranges = editor.word_ranges();
+                            editor.selection = word_ranges.get(ev).unwrap().clone();
+                        }
+                        3 => {
+                            // Should select the line
+                        }
+                        4 => {
+                            count = 0;
+                            editor.selection = 0..editor.text.len();
+                        }
+                        _ => {}
                     }
-                    4 => {
-                        count = 0;
-                        editor.selection = 0..editor.text.len();
-                    }
-                    _ => {}
-                }
-                editor.word_click = (ev, count);
-                cx.notify();
-            });
-        })
+                    editor.word_click = (ev, count);
+                    cx.notify();
+                });
+            },
+        )
     }
 }

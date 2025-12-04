@@ -9,11 +9,11 @@
  *
  */
 
-use std::{collections::HashMap, time::Duration};
-
 use gpui::*;
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
+use std::process::id;
+use std::{collections::HashMap, time::Duration};
 
 use crate::{
     command,
@@ -33,7 +33,7 @@ use super::numbat::{Numbat, NumbatWrapper};
 pub struct RootListBuilder;
 command!(RootListBuilder);
 impl StateViewBuilder for RootListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search for apps and commands...", cx);
@@ -64,7 +64,7 @@ impl StateViewBuilder for RootListBuilder {
                                 "Copy",
                                 None,
                                 {
-                                    move |this, cx: &mut WindowContext| {
+                                    move |this, cx: &mut App| {
                                         cx.write_to_clipboard(ClipboardItem::new_string(
                                             result.result.to_string(),
                                         ));
@@ -190,7 +190,7 @@ impl StateViewBuilder for RootListBuilder {
 pub struct LoungyCommandBuilder;
 command!(LoungyCommandBuilder);
 impl RootCommandBuilder for LoungyCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "loungy",
             "Loungy",

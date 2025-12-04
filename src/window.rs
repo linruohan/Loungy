@@ -11,9 +11,8 @@
 
 use std::time::Duration;
 
-use gpui::*;
-
 use crate::{components::shared::NoView, state::StateModel, theme::Theme};
+use gpui::*;
 
 pub static WIDTH: u32 = 800;
 pub static HEIGHT: u32 = 450;
@@ -25,25 +24,25 @@ pub enum WindowStyle {
 }
 
 impl WindowStyle {
-    pub fn options(&self, bounds: Bounds<px>) -> WindowOptions {
+    pub fn options(&self, bounds: Bounds<Pixels>) -> WindowOptions {
         let mut options = WindowOptions::default();
         let center = bounds.center();
 
         let (width, height, x, y) = match self {
             WindowStyle::Main => {
                 options.focus = true;
-                let width = px::from(WIDTH);
-                let height = px::from(HEIGHT);
-                let x: px = center.x - width / 2.0;
-                let y: px = center.y - height / 2.0;
+                let width = Pixels::from(WIDTH);
+                let height = Pixels::from(HEIGHT);
+                let x: Pixels = center.x - width / 2.0;
+                let y: Pixels = center.y - height / 2.0;
                 (width, height, x, y)
             }
             WindowStyle::Toast { width, height } => {
                 options.focus = false;
-                let width = px::from(*width);
-                let height = px::from(*height);
-                let x: px = center.x - width / 2.0;
-                let y: px = bounds.bottom() - height - px::from(200.0);
+                let width = Pixels::from(*width);
+                let height = Pixels::from(*height);
+                let x: Pixels = center.x - width / 2.0;
+                let y: Pixels = bounds.bottom() - height - Pixels::from(200.0);
                 (width, height, x, y)
             }
             WindowStyle::Settings => {
@@ -62,12 +61,12 @@ impl WindowStyle {
 }
 
 pub struct Window {
-    inner: View<NoView>,
+    inner: Entity<NoView>,
     hidden: bool,
 }
 
 impl Window {
-    pub fn init(cx: &mut WindowContext) {
+    pub fn init(cx: &mut App) {
         let view = cx.new_view(|cx| {
             cx.observe_window_activation(|_, cx| {
                 if cx.is_window_active() {
@@ -90,21 +89,21 @@ impl Window {
             hidden: false,
         });
     }
-    pub fn is_open(cx: &AsyncAppContext) -> bool {
+    pub fn is_open(cx: &AsyncApp) -> bool {
         cx.read_global::<Self, _>(|w, _| !w.hidden).unwrap_or(false)
     }
-    pub fn open(cx: &mut WindowContext) {
+    pub fn open(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                cx.activate_window();
+                cx.activate(true);
                 this.hidden = false;
             }
         });
     }
-    pub fn toggle(cx: &mut WindowContext) {
+    pub fn toggle(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                cx.activate_window();
+                cx.activate(true);
                 this.hidden = false;
             } else {
                 cx.hide();
@@ -112,7 +111,7 @@ impl Window {
             }
         });
     }
-    pub fn close(cx: &mut WindowContext) {
+    pub fn close(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             this.hidden = true;
             cx.hide();

@@ -11,14 +11,13 @@
 
 use std::{any::Any, collections::HashMap};
 
-use gpui::*;
-
 use crate::{
     components::shared::{Icon, Img},
     query::{TextEvent, TextInputWeak},
     state::{Action, Actions, Shortcut, StateViewContext},
     theme::Theme,
 };
+use gpui::*;
 
 #[derive(Clone)]
 pub struct Input {
@@ -66,7 +65,7 @@ pub struct InputView {
     input: TextInputWeak,
     focused: bool,
     index: usize,
-    focus_model: Model<usize>,
+    focus_model: Entity<usize>,
 }
 
 impl Render for InputView {
@@ -302,9 +301,9 @@ impl InputView {
         input: Input,
         query: TextInputWeak,
         index: usize,
-        focus_model: Model<usize>,
+        focus_model: Entity<usize>,
         cx: &mut App,
-    ) -> View<Self> {
+    ) -> Entity<Self> {
         cx.new_view(|cx| {
             cx.observe(&focus_model, move |input: &mut InputView, focused, cx| {
                 let old = input.focused;
@@ -384,6 +383,7 @@ impl<'a> Clone for Box<dyn 'a + SubmitFn> {
 
 pub struct Form {
     list: ListState,
+    inputs: Vec<Entity<InputView>>,
 }
 
 impl Form {
@@ -391,10 +391,11 @@ impl Form {
         inputs: Vec<Input>,
         submit: impl SubmitFn + 'static,
         context: &mut StateViewContext,
+        window: &mut Window,
         cx: &mut App,
-    ) -> View<Self> {
-        let focus_model: Model<usize> = cx.new_model(|_| 0);
-        let inputs: Vec<View<InputView>> = inputs
+    ) -> Entity<Self> {
+        let focus_model: Entity<usize> = cx.new_model(|_| 0);
+        let inputs: Vec<Entity<InputView>> = inputs
             .into_iter()
             .enumerate()
             .map(|(i, input)| {
@@ -440,23 +441,23 @@ impl Form {
                 cx,
             );
         }
-
-        cx.new_view(|_| Self {
-            list: ListState::new(
-                inputs.len(),
-                ListAlignment::Top,
-                px(100.0),
-                move |i, _| div().child(inputs[i].clone()).py_2().into_any_element(),
-            ),
+        cx.new(|_| Self {
+            list: ListState::new(inputs.len(), ListAlignment::Top, px(100.0)),
+            inputs,
         })
     }
 }
 
 impl Render for Form {
-    fn render(&mut self, _: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .p_4()
-            .size_full()
-            .child(list(self.list.clone()).size_full())
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div().p_4().size_full().child(
+            list(
+                self.list.clone(),
+                cx.processor(|this, ix, window, cx| {
+                    div().child(self.inputs[ix]).py_2().into_any_element()
+                }),
+            )
+            .size_full(),
+        )
     }
 }

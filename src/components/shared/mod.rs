@@ -136,7 +136,9 @@ impl Img {
         self
     }
     pub fn url(mut self, src: impl ToString) -> Self {
-        self.src = ImgSource::Base(ImageSource::Resource(Resource::from(SharedUri::from(src.to_string()))));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::from(SharedUri::from(
+            src.to_string(),
+        ))));
         self
     }
     pub fn mask(mut self, mask: ImgMask) -> Self {

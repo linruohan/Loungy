@@ -15,7 +15,7 @@
 #![allow(dead_code)]
 
 use app::run_app;
-use gpui::{App, AppContext, Application};
+use gpui::{App, Application};
 use ipc::{client::client_connect, server::setup_socket};
 
 mod app;
@@ -35,7 +35,7 @@ mod theme;
 mod window;
 mod workspace;
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
     env_logger::init();
 

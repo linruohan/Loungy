@@ -1,49 +1,79 @@
+use smol::io::{AsyncReadExt, AsyncWriteExt};
+use std::net::{Ipv4Addr, SocketAddr};
 use std::path::Path;
 
-use anyhow::anyhow;
-use async_std::{
-    io::{ReadExt, WriteExt},
-    os::unix::net::{UnixListener, UnixStream},
-};
-use clap::{command, Arg, ValueEnum};
-use gpui::{AsyncApp, AsyncApp};
-use serde::{Deserialize, Serialize};
-
+use super::{SOCKET_PATH, SOCKET_PORT};
 use crate::{
     commands::RootCommands,
     state::{Actions, StateModel},
     window::Window,
 };
-
-use super::SOCKET_PATH;
-
-pub async fn setup_socket() -> anyhow::Result<UnixListener> {
-    if Path::new(SOCKET_PATH).exists() {
-        if UnixStream::connect(SOCKET_PATH).await.is_ok() {
-            return Err(anyhow!("Server already running"));
-        }
-        std::fs::remove_file(SOCKET_PATH)?;
-    };
-    let listener = UnixListener::bind(SOCKET_PATH).await?;
-    log::info!("Listening on socket: {}", SOCKET_PATH);
-
-    Ok(listener)
+use anyhow::anyhow;
+use clap::{command, Arg, ValueEnum};
+use gpui::AsyncApp;
+use serde::{Deserialize, Serialize};
+#[cfg(unix)]
+use smol::net::unix::{UnixListener, UnixStream};
+#[cfg(windows)]
+use smol::net::{TcpListener, TcpStream};
+// 平台无关的监听器枚举
+pub enum PlatformListener {
+    #[cfg(unix)]
+    Unix(smol::net::unix::UnixListener),
+    #[cfg(windows)]
+    Tcp(smol::net::TcpListener),
 }
+// 平台无关的流枚举
+pub enum PlatformStream {
+    #[cfg(unix)]
+    Unix(smol::net::unix::UnixStream),
+    #[cfg(windows)]
+    Tcp(smol::net::TcpStream),
+}
+fn extract_port_from_path(path: &str) -> Option<u16> {
+    if path.starts_with("/") {
+        path.split('/').last()?.parse().ok()
+    } else {
+        path.parse().ok()
+    }
+}
+pub async fn setup_socket() -> anyhow::Result<PlatformListener> {
+    #[cfg(unix)]
+    {
+        use smol::net::unix::{UnixListener, UnixStream};
 
-pub async fn start_server(
-    listener: UnixListener,
-    cx: &mut AsyncApp,
-) -> anyhow::Result<()> {
-    let commands = cx.read_global::<RootCommands, _>(|commands, _| commands.clone())?;
-    loop {
-        let (stream, _) = listener.accept().await?;
-        cx.spawn(async move |window, cx| handle_client(stream, commands.clone(), cx))
-            .detach();
+        if Path::new(SOCKET_PATH).exists() {
+            if UnixStream::connect(Path::new(SOCKET_PATH)).await.is_ok() {
+                return Err(anyhow::anyhow!("Server already running"));
+            }
+            std::fs::remove_file(SOCKET_PATH)?;
+        };
+
+        let listener = UnixListener::bind(Path::new(SOCKET_PATH))?;
+        log::info!("Listening on Unix socket: {}", SOCKET_PATH);
+
+        Ok(PlatformListener::Unix(listener))
+    }
+
+    #[cfg(windows)]
+    {
+        let port = extract_port_from_path(SOCKET_PATH).unwrap_or(SOCKET_PORT);
+        let addr = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
+
+        // 检查端口是否被占用
+        if smol::net::TcpStream::connect(addr).await.is_ok() {
+            return Err(anyhow::anyhow!("Server already running on port {}", port));
+        }
+
+        let listener = smol::net::TcpListener::bind(addr).await?;
+        log::info!("Listening on TCP socket: {}", addr);
+
+        Ok(PlatformListener::Tcp(listener))
     }
 }
 
 async fn handle_client(
-    mut stream: UnixStream,
+    mut stream: PlatformStream,
     commands: RootCommands,
     _window: &mut Window,
     cx: &mut AsyncApp,

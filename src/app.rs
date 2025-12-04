@@ -10,13 +10,8 @@
  */
 
 use crate::{
-    assets::Assets,
-    commands::RootCommands,
-    hotkey::HotkeyManager,
-    ipc::server::start_server,
-    theme::Theme,
-    window::Window,
-    workspace::Workspace,
+    assets::Assets, commands::RootCommands, hotkey::HotkeyManager, ipc::server::start_server,
+    theme::Theme, window::Window, workspace::Workspace,
 };
 use async_std::os::unix::net::UnixListener;
 use gpui::*;
@@ -36,7 +31,10 @@ pub fn run_app(listener: UnixListener, app: gpui::Application) {
         let options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             titlebar: Some(TitleBar::title_bar_options()),
-            window_min_size: Some(gpui::Size { width: px(480.), height: px(320.) }),
+            window_min_size: Some(gpui::Size {
+                width: px(480.),
+                height: px(320.),
+            }),
             kind: WindowKind::Normal,
             #[cfg(target_os = "linux")]
             window_background: gpui::WindowBackgroundAppearance::Transparent,
@@ -47,11 +45,11 @@ pub fn run_app(listener: UnixListener, app: gpui::Application) {
             ..Default::default()
         };
 
-
         let _ = cx.open_window(options, |window, cx| {
             let theme = cx.global::<Theme>();
             RootCommands::init(cx);
-            cx.spawn(async move |cx| start_server(listener, cx)).detach();
+            cx.spawn(async move |cx| start_server(listener, cx))
+                .detach();
             HotkeyManager::init(cx);
             let view = Workspace::build(cx);
             Window::init(cx);
