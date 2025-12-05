@@ -11,7 +11,6 @@
 
 use std::ops::Range;
 
-use crate::components::list::List;
 use gpui::*;
 use log::debug;
 
@@ -40,7 +39,7 @@ impl TextInput {
 #[derive(Clone)]
 pub struct TextInputWeak {
     pub focus_handle: FocusHandle,
-    pub view: WeakEntity<TextView>,
+    pub view: WeakView<TextView>,
 }
 
 impl TextInputWeak {
@@ -50,29 +49,29 @@ impl TextInputWeak {
         }
         "".to_string()
     }
-    pub fn set_placeholder<C: AppContext>(&self, placeholder: impl ToString, cx: &mut C) {
+    pub fn set_placeholder<C: VisualContext>(&self, placeholder: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_entity(&view, |editor: &mut TextView, cx| {
+            cx.update_view(&view, |editor: &mut TextView, cx| {
                 editor.placeholder = placeholder.to_string();
                 cx.notify();
             });
         }
     }
-    pub fn set_text<C: AppContext>(&self, text: impl ToString, cx: &mut C) {
+    pub fn set_text<C: VisualContext>(&self, text: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_entity(&view, |editor: &mut TextView, cx| {
+            cx.update_view(&view, |editor: &mut TextView, cx| {
                 editor.set_text(text, cx);
             });
         }
     }
-    pub fn set_masked<C: AppContext>(&self, masked: bool, cx: &mut C) {
+    pub fn set_masked<C: VisualContext>(&self, masked: bool, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_entity(&view, |editor: &mut TextView, cx| {
+            cx.update_view(&view, |editor: &mut TextView, cx| {
                 editor.set_masked(masked, cx);
             });
         }
     }
-    pub fn has_focus(&self, cx: &mut Context<crate::components::list::List>) -> bool {
+    pub fn has_focus(&self, cx: &App) -> bool {
         if let Some(fh) = cx.focused() {
             return fh.eq(&self.focus_handle);
         }
@@ -97,7 +96,7 @@ impl TextView {
             placeholder: "Type here...".to_string(),
             masked: false,
         };
-        let view = cx.new(|cx| {
+        let view = cx.new_view(|cx| {
             #[cfg(debug_assertions)]
             cx.on_release(|_, _, _| debug!("Text Input released"))
                 .detach();
@@ -198,7 +197,7 @@ pub enum TextEvent {
 impl EventEmitter<TextEvent> for TextView {}
 
 impl RenderOnce for TextInput {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         cx.focus(&self.focus_handle);
         //let theme = cx.global::<Theme>();
         let clone = self.view.clone();
@@ -360,35 +359,32 @@ impl Render for TextView {
         }
 
         let styled_text = StyledText::new(text + " ").with_highlights(&style, highlights);
-        let view = cx.notify();
-        InteractiveText::new("text", styled_text).on_click(
-            self.word_ranges(),
-            move |ev, window, cx| {
-                view.update(cx, |editor, cx| {
-                    let (index, mut count) = editor.word_click;
-                    if index == ev {
-                        count += 1;
-                    } else {
-                        count = 1;
+        let view = cx.view().clone();
+        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, cx| {
+            view.update(cx, |editor, cx| {
+                let (index, mut count) = editor.word_click;
+                if index == ev {
+                    count += 1;
+                } else {
+                    count = 1;
+                }
+                match count {
+                    2 => {
+                        let word_ranges = editor.word_ranges();
+                        editor.selection = word_ranges.get(ev).unwrap().clone();
                     }
-                    match count {
-                        2 => {
-                            let word_ranges = editor.word_ranges();
-                            editor.selection = word_ranges.get(ev).unwrap().clone();
-                        }
-                        3 => {
-                            // Should select the line
-                        }
-                        4 => {
-                            count = 0;
-                            editor.selection = 0..editor.text.len();
-                        }
-                        _ => {}
+                    3 => {
+                        // Should select the line
                     }
-                    editor.word_click = (ev, count);
-                    cx.notify();
-                });
-            },
-        )
+                    4 => {
+                        count = 0;
+                        editor.selection = 0..editor.text.len();
+                    }
+                    _ => {}
+                }
+                editor.word_click = (ev, count);
+                cx.notify();
+            });
+        })
     }
 }

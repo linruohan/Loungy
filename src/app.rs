@@ -9,25 +9,25 @@
  *
  */
 
+use crate::ipc::server::PlatformListener;
 use crate::{
     assets::Assets, commands::RootCommands, hotkey::HotkeyManager, ipc::server::start_server,
     theme::Theme, window::Window, workspace::Workspace,
 };
-use async_std::os::unix::net::UnixListener;
 use gpui::*;
 use gpui_component::TitleBar;
 
-pub fn run_app(listener: UnixListener, app: gpui::Application) {
+pub fn run_app(listener: PlatformListener, app: gpui::Application) {
     app.with_assets(Assets).run(move |cx: &mut App| {
         Theme::init(cx);
         // TODO: This still only works for a single display
-        let bounds = Bounds {
-            origin: Point::new(px::from(0.0), px::from(0.0)),
+        let bounds = cx.displays().first().map(|d| d.bounds()).unwrap_or(Bounds {
+            origin: Point::new(Pixels::from(0.0), Pixels::from(0.0)),
             size: Size {
-                width: px::from(1920.0),
-                height: px::from(1080.0),
+                width: Pixels::from(1920.0),
+                height: Pixels::from(1080.0),
             },
-        };
+        });
         let options = WindowOptions {
             window_bounds: Some(WindowBounds::Windowed(bounds)),
             titlebar: Some(TitleBar::title_bar_options()),
@@ -45,11 +45,13 @@ pub fn run_app(listener: UnixListener, app: gpui::Application) {
             ..Default::default()
         };
 
-        let _ = cx.open_window(options, |window, cx| {
+        let _ = cx.open_window(options, |cx| {
             let theme = cx.global::<Theme>();
+            cx.set_background_appearance(WindowBackgroundAppearance::from(
+                theme.window_background.clone().unwrap_or_default(),
+            ));
             RootCommands::init(cx);
-            cx.spawn(async move |cx| start_server(listener, cx))
-                .detach();
+            cx.spawn(|cx| start_server(listener, cx), ()).detach();
             HotkeyManager::init(cx);
             let view = Workspace::build(cx);
             Window::init(cx);

@@ -11,8 +11,9 @@
 
 use std::time::Duration;
 
-use crate::{components::shared::NoView, state::StateModel, theme::Theme};
 use gpui::*;
+
+use crate::{components::shared::NoView, state::StateModel, theme::Theme};
 
 pub static WIDTH: u32 = 800;
 pub static HEIGHT: u32 = 450;
@@ -89,13 +90,13 @@ impl Window {
             hidden: false,
         });
     }
-    pub fn is_open(cx: &AsyncApp) -> bool {
+    pub fn is_open(cx: &AsyncAppContext) -> bool {
         cx.read_global::<Self, _>(|w, _| !w.hidden).unwrap_or(false)
     }
     pub fn open(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                cx.activate(true);
+                cx.activate_window();
                 this.hidden = false;
             }
         });
@@ -103,7 +104,7 @@ impl Window {
     pub fn toggle(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                cx.activate(true);
+                cx.activate_window();
                 this.hidden = false;
             } else {
                 cx.hide();

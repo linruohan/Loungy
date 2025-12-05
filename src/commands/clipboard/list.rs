@@ -54,11 +54,11 @@ use crate::{
 
 #[derive(Clone)]
 pub struct ClipboardListBuilder {
-    view: View<AsyncListItems>,
+    view: Entity<AsyncListItems>,
 }
 command!(ClipboardListBuilder);
 impl StateViewBuilder for ClipboardListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search your clipboard history...", cx);
@@ -219,7 +219,7 @@ impl ClipboardListItem {
 
         item
     }
-    fn get_item(&self, cx: &mut ViewContext<AsyncListItems>) -> Item {
+    fn get_item(&self, cx: &mut Context<AsyncListItems>) -> Item {
         ItemBuilder::new(
             self.id,
             ListItem::new(
@@ -338,7 +338,7 @@ impl ClipboardListItem {
         .meta(cx.new_model(|_| self.copied_last).into_any())
         .build()
     }
-    fn delete(&self, view: WeakView<AsyncListItems>, cx: &mut WindowContext) -> anyhow::Result<()> {
+    fn delete(&self, view: WeakView<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
         let _ = view.update(cx, |view, cx| {
             view.remove(self.kind.clone().into(), self.id, cx);
         });
@@ -357,11 +357,7 @@ impl ClipboardListItem {
         }
         Ok(())
     }
-    fn prune(
-        age: Span,
-        view: WeakView<AsyncListItems>,
-        cx: &mut WindowContext,
-    ) -> anyhow::Result<()> {
+    fn prune(age: Span, view: WeakView<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
         let items = Self::all(db_items()).query()?;
         for item in items {
             if item.contents.copied_last < Timestamp::now().checked_sub(age).unwrap() {
@@ -378,12 +374,12 @@ struct ClipboardPreview {
     id: u64,
     item: ClipboardListItem,
     detail: ClipboardDetail,
-    bounds: Model<Bounds<px>>,
+    bounds: Entity<Bounds<Pixels>>,
     state: ListState,
 }
 
 impl ClipboardPreview {
-    fn init(id: u64, cx: &mut WindowContext) -> Self {
+    fn init(id: u64, cx: &mut App) -> Self {
         let item = ClipboardListItem::get(&id, db_items())
             .unwrap()
             .unwrap()
@@ -400,60 +396,62 @@ impl ClipboardPreview {
             item,
             detail: detail.clone(),
             bounds: bounds.clone(),
-            state: ListState::new(1, ListAlignment::Top, px(100.0), move |_, cx| match detail
-                .kind
-                .clone()
-            {
-                ClipboardKind::Text { text, .. } | ClipboardKind::Url { url: text, .. } => {
-                    div().p_2().w_full().child(text.clone()).into_any_element()
-                }
-                ClipboardKind::Image {
-                    width,
-                    height,
-                    path,
-                    ..
-                } => {
-                    let bounds = bounds.read(cx);
-                    let (mut w, mut h) = if height < width {
-                        (
-                            bounds.size.width.0,
-                            bounds.size.width.0 * height as f32 / width as f32,
-                        )
-                    } else {
-                        (
-                            bounds.size.width.0 * width as f32 / height as f32,
-                            bounds.size.width.0,
-                        )
-                    };
-                    if w > bounds.size.width.0 {
-                        h *= bounds.size.width.0 / w;
-                        w = bounds.size.width.0;
+            state: ListState::new(
+                1,
+                ListAlignment::Top,
+                Pixels(100.0),
+                move |_, cx| match detail.kind.clone() {
+                    ClipboardKind::Text { text, .. } | ClipboardKind::Url { url: text, .. } => {
+                        div().p_2().w_full().child(text.clone()).into_any_element()
                     }
-                    if h > bounds.size.height.0 {
-                        w *= bounds.size.height.0 / h;
-                        h = bounds.size.height.0;
-                    }
-                    let ml = (bounds.size.width.0 - w) / 2.0;
-                    let mt = (bounds.size.height.0 - h) / 2.0;
+                    ClipboardKind::Image {
+                        width,
+                        height,
+                        path,
+                        ..
+                    } => {
+                        let bounds = bounds.read(cx);
+                        let (mut w, mut h) = if height < width {
+                            (
+                                bounds.size.width.0,
+                                bounds.size.width.0 * height as f32 / width as f32,
+                            )
+                        } else {
+                            (
+                                bounds.size.width.0 * width as f32 / height as f32,
+                                bounds.size.width.0,
+                            )
+                        };
+                        if w > bounds.size.width.0 {
+                            h *= bounds.size.width.0 / w;
+                            w = bounds.size.width.0;
+                        }
+                        if h > bounds.size.height.0 {
+                            w *= bounds.size.height.0 / h;
+                            h = bounds.size.height.0;
+                        }
+                        let ml = (bounds.size.width.0 - w) / 2.0;
+                        let mt = (bounds.size.height.0 - h) / 2.0;
 
-                    div()
-                        .child(
-                            img(ImageSource::File(Arc::new(path.clone())))
-                                .w(px(w))
-                                .h(px(h)),
-                        )
-                        .pl(px(ml))
-                        .pt(px(mt))
-                        .size_full()
-                        .into_any_element()
-                }
-            }),
+                        div()
+                            .child(
+                                img(ImageSource::File(Arc::new(path.clone())))
+                                    .w(Pixels(w))
+                                    .h(Pixels(h)),
+                            )
+                            .pl(Pixels(ml))
+                            .pt(Pixels(mt))
+                            .size_full()
+                            .into_any_element()
+                    }
+                },
+            ),
         }
     }
 }
 
 impl Render for ClipboardPreview {
-    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
 
         let mut table = vec![
@@ -584,7 +582,7 @@ impl Render for ClipboardPreview {
 command!(ClipboardPreview);
 
 impl StateViewBuilder for ClipboardPreview {
-    fn build(&self, _context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, _context: &mut StateViewContext, cx: &mut App) -> AnyView {
         cx.new_view(|_| self.clone()).into()
     }
 }
@@ -602,7 +600,7 @@ pub(super) fn db_detail() -> &'static Database {
 pub struct ClipboardCommandBuilder;
 command!(ClipboardCommandBuilder);
 impl RootCommandBuilder for ClipboardCommandBuilder {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let mut list_items = AsyncListItems::new();
             let items = ClipboardListItem::all(db_items())

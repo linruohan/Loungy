@@ -132,13 +132,11 @@ impl Img {
         self
     }
     pub fn file(mut self, src: PathBuf) -> Self {
-        self.src = ImgSource::Base(ImageSource::Resource(Resource::from(Arc::new(src))));
+        self.src = ImgSource::Base(ImageSource::File(Arc::new(src)));
         self
     }
     pub fn url(mut self, src: impl ToString) -> Self {
-        self.src = ImgSource::Base(ImageSource::Resource(Resource::from(SharedUri::from(
-            src.to_string(),
-        ))));
+        self.src = ImgSource::Base(ImageSource::Uri(SharedUri::from(src.to_string())));
         self
     }
     pub fn mask(mut self, mask: ImgMask) -> Self {
@@ -225,7 +223,7 @@ impl RenderOnce for Img {
 pub struct NoView;
 
 impl Render for NoView {
-    fn render(&mut self, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }
@@ -307,12 +305,7 @@ impl Favicon {
 
         Err(anyhow!("No favicon found for {}", url))
     }
-    pub fn new(
-        img: &Img,
-        url: impl ToString,
-        fallback: Icon,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
+    pub fn new(img: &Img, url: impl ToString, fallback: Icon, cx: &mut App) -> Entity<Self> {
         let url = 'url: {
             let Ok(url) = Url::parse(&url.to_string()) else {
                 break 'url "";
@@ -340,7 +333,7 @@ impl Favicon {
 }
 
 impl Render for Favicon {
-    fn render(&mut self, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         if let Some(task) = self
             .task
             .get_or_init(|| {

@@ -145,7 +145,7 @@ pub(super) struct Message {
     pub first: bool,
     pub last: bool,
     pub in_reply_to: Option<String>,
-    pub meta: AnyModel,
+    pub meta: AnyEntity,
 }
 
 impl Message {

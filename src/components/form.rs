@@ -11,13 +11,14 @@
 
 use std::{any::Any, collections::HashMap};
 
+use gpui::*;
+
 use crate::{
     components::shared::{Icon, Img},
     query::{TextEvent, TextInputWeak},
     state::{Action, Actions, Shortcut, StateViewContext},
     theme::Theme,
 };
-use gpui::*;
 
 #[derive(Clone)]
 pub struct Input {
@@ -29,12 +30,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn new(
-        id: impl ToString,
-        label: impl ToString,
-        kind: InputKind,
-        _: &mut Context<Self>,
-    ) -> Self {
+    pub fn new(id: impl ToString, label: impl ToString, kind: InputKind, _: &mut App) -> Self {
         Self {
             id: id.to_string(),
             label: label.to_string(),
@@ -69,7 +65,7 @@ pub struct InputView {
 }
 
 impl Render for InputView {
-    fn render(&mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         //cx.focus(&self.focus_handle);
         let theme = cx.global::<Theme>();
         let fm = self.focus_model.clone();

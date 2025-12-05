@@ -27,7 +27,7 @@ use crate::{
     },
     query::{TextEvent, TextInput, TextInputWeak},
     theme::{self, Theme},
-    window::WindowStyle,
+    window::{Window, WindowStyle},
 };
 
 pub struct LazyMutex<T> {
@@ -70,12 +70,7 @@ pub enum ToastState {
 
 impl ToastState {
     fn dot(color: Hsla) -> AnyElement {
-        let size = px(6.0);
-        let ping_color = {
-            let mut ping = color;
-            ping.a = 0.3; // 降低透明度
-            ping
-        };
+        let size = Pixels(6.0);
         div()
             .size_6()
             .flex()
@@ -98,7 +93,7 @@ impl ToastState {
                                 let delta = (delta - 0.75) * 4.0;
                                 let mut color = color;
                                 color.a = 1.0 - delta;
-                                let size = Pixels::from(size.0 * delta * 2.0 + size.0);
+                                let size = Pixels(size.0 * delta * 2.0 + size.0);
                                 div.bg(color).size(size)
                             }
                         },
@@ -182,7 +177,7 @@ impl Render for ToastState {
                 .child(div().child(el).mr_2().flex_shrink_0())
                 .text_color(theme.text)
                 .font_weight(FontWeight::MEDIUM)
-                .child(message.into())
+                .child(message.to_string())
                 .with_animation(
                     "toast-pulse",
                     Animation::new(Duration::from_secs(3))
@@ -231,7 +226,7 @@ pub struct Toast {
 
 impl Toast {
     pub fn init(cx: &mut App) -> Self {
-        let state = cx.new(|_| ToastState::Idle);
+        let state = cx.new_view(|_| ToastState::Idle);
         Self { state }
     }
     pub fn loading<C: VisualContext>(&mut self, message: impl ToString, cx: &mut C) {
@@ -271,10 +266,10 @@ impl Toast {
     */
     pub fn floating(&mut self, message: impl ToString, icon: Option<Icon>, cx: &mut App) {
         let bounds = cx.display().map(|d| d.bounds()).unwrap_or(Bounds {
-            origin: Point::new(px::from(0.0), px::from(0.0)),
+            origin: Point::new(Pixels::from(0.0), Pixels::from(0.0)),
             size: Size {
-                width: px::from(1920.0),
-                height: px::from(1080.0),
+                width: Pixels::from(1920.0),
+                height: Pixels::from(1080.0),
             },
         });
         Window::close(cx);
@@ -285,7 +280,7 @@ impl Toast {
             }
             .options(bounds),
             |cx| {
-                cx.spawn(async move |cx| {
+                cx.spawn(|mut cx| async move {
                     cx.background_executor().timer(Duration::from_secs(2)).await;
                     //cx.background_executor().timer(Duration::from_secs(2)).await;
                     let _ = cx.update_window(cx.window_handle(), |_, cx| {
@@ -307,7 +302,7 @@ pub struct PopupToast {
 }
 
 impl Render for PopupToast {
-    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
 
         let icon = if let Some(icon) = self.icon.clone() {
@@ -340,7 +335,7 @@ pub struct StateItem {
     pub id: SharedString,
     pub query: TextInput,
     pub view: AnyView,
-    pub actions: View<Actions>,
+    pub actions: Entity<Actions>,
     pub workspace: bool,
 }
 
@@ -683,7 +678,7 @@ pub struct Action {
 }
 
 impl RenderOnce for Action {
-    fn render(self, _: &mut Window, _cx: &mut App) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let shortcut = if let Some(shortcut) = self.shortcut {
             div().child(shortcut)
         } else {
@@ -787,15 +782,15 @@ pub struct Actions {
 impl Actions {
     fn new(update_sender: crossbeam_channel::Sender<bool>, cx: &mut App) -> Self {
         Self {
-            global: cx.new(|| Vec::new()),
-            local: cx.new(|| Vec::new()),
+            global: cx.new_model(|_| Vec::new()),
+            local: cx.new_model(|_| Vec::new()),
             active: None,
             meta: None,
             show: false,
             query: None,
             list: None,
             toast: Toast::init(cx),
-            dropdown: cx.new(|_| Dropdown {
+            dropdown: cx.new_view(|_| Dropdown {
                 value: "".to_string(),
                 items: vec![],
             }),
@@ -842,7 +837,7 @@ impl Actions {
         let list = self.list.clone().unwrap();
         let el_height = 42.0;
         let count = list.read(cx).items.read(cx).len();
-        let height = px(if count == 0 {
+        let height = Pixels(if count == 0 {
             0.0
         } else if count > 4 {
             4.0 * el_height + 20.0
@@ -952,7 +947,7 @@ impl Render for Actions {
                 .items_center()
                 .font_weight(FontWeight::SEMIBOLD)
                 .child(div().child(action.clone()).text_color(theme.text))
-                .child(div().h_2_3().w(px(2.0)).bg(theme.surface0).mx_2())
+                .child(div().h_2_3().w(Pixels(2.0)).bg(theme.surface0).mx_2())
                 .child(open)
                 .child(self.popup(cx))
         } else {
@@ -963,7 +958,7 @@ impl Render for Actions {
 
 #[derive(Clone)]
 pub struct ActionsModel {
-    pub inner: WeakEntity<Actions>,
+    pub inner: WeakView<Actions>,
 }
 
 impl ActionsModel {
@@ -971,9 +966,9 @@ impl ActionsModel {
         update_sender: crossbeam_channel::Sender<bool>,
         cx: &mut App,
     ) -> (Self, Entity<Actions>) {
-        let inner = cx.new(|cx| {
+        let inner = cx.new_view(|cx| {
             #[cfg(debug_assertions)]
-            cx.on_release(|_, _| debug!("ActionsModel released"))
+            cx.on_release(|_, _, _| debug!("ActionsModel released"))
                 .detach();
             Actions::new(update_sender, cx)
         });
