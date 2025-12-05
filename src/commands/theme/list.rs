@@ -9,10 +9,6 @@
  *
  */
 
-use std::time::Duration;
-
-use gpui::*;
-
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder},
@@ -24,6 +20,8 @@ use crate::{
     state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
     theme::{Theme, ThemeSettings},
 };
+use gpui::{AnyView, App, WindowBackgroundAppearance};
+use std::time::Duration;
 
 #[derive(Clone)]
 pub struct ThemeListBuilder;

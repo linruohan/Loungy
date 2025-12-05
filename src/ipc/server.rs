@@ -29,7 +29,7 @@ impl PlatformListener {
             #[cfg(unix)]
             PlatformListener::Unix(listener) => {}
             #[cfg(windows)]
-            PlatformListener::Tcp(listener) => {}
+            PlatformListener::Tcp(_listener) => {}
         }
     }
 }

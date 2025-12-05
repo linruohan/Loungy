@@ -14,11 +14,15 @@ use async_std::{
     task::{sleep, spawn, JoinHandle},
 };
 use futures::{future::Shared, FutureExt};
+use gpui::{
+    div, img, AnyElement, AnyEntity, AnyView, App, AsyncWindowContext, FontWeight, ImageSource,
+    IntoElement, MouseButton, MouseDownEvent, RenderOnce, WeakEntity,
+};
+use gpui_macros::IntoElement;
 use jiff::Timestamp;
 use std::{rc::Rc, sync::Arc, time::Duration};
 use url::Url;
 
-use gpui::*;
 use log::debug;
 use matrix_sdk::{
     ruma::{
@@ -329,7 +333,7 @@ fn get_source(
 async fn sync(
     timeline: Arc<Timeline>,
     room: Arc<Room>,
-    view: WeakView<AsyncListItems>,
+    view: WeakEntity<AsyncListItems>,
     cx: &mut AsyncWindowContext,
 ) -> anyhow::Result<()> {
     let (mut messages, mut stream) = timeline.subscribe().await;

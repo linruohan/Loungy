@@ -9,11 +9,11 @@
  *
  */
 
-use std::{collections::HashMap, process::Command, time::Duration};
-
-use gpui::*;
+use gpui::{AnyView, App, ClipboardItem};
 use jiff::Timestamp;
+use nucleo::Status;
 use serde::Deserialize;
+use std::{collections::HashMap, process::Command, time::Duration};
 
 use crate::{
     command,

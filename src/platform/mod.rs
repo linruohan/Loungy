@@ -10,7 +10,7 @@
  */
 
 use crate::components::shared::Img;
-use gpui::{App, AsyncAppContext, Global};
+use gpui::{App, AsyncWindowContext, Global};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -43,17 +43,17 @@ impl ClipboardWatcher {
     pub fn init(cx: &mut App) {
         cx.set_global(Self { enabled: true });
     }
-    pub fn enabled(cx: &mut AsyncAppContext) {
+    pub fn enabled(cx: &mut AsyncWindowContext) {
         let _ = cx.update_global::<Self, _>(|this, _| {
             this.enabled = true;
         });
     }
-    pub fn disabled(cx: &mut AsyncAppContext) {
+    pub fn disabled(cx: &mut AsyncWindowContext) {
         let _ = cx.update_global::<Self, _>(|this, _| {
             this.enabled = false;
         });
     }
-    pub fn is_enabled(cx: &AsyncAppContext) -> bool {
+    pub fn is_enabled(cx: &AsyncWindowContext) -> bool {
         cx.try_read_global::<Self, _>(|x, _| x.enabled)
             .unwrap_or(false)
     }

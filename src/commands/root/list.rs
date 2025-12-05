@@ -9,11 +9,10 @@
  *
  */
 
-use std::{collections::HashMap, time::Duration};
-
-use gpui::*;
+use gpui::{AnyView, App, ClipboardItem};
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
+use std::{collections::HashMap, time::Duration};
 
 use crate::{
     command,

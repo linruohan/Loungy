@@ -8,13 +8,15 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
 use crate::ipc::server::PlatformListener;
 use crate::{
     assets::Assets, commands::RootCommands, hotkey::HotkeyManager, ipc::server::start_server,
     theme::Theme, window::LWindow, workspace::Workspace,
 };
-use gpui::*;
+use gpui::{
+    px, App, Bounds, Pixels, Point, Size, WindowBackgroundAppearance, WindowBounds, WindowKind,
+    WindowOptions,
+};
 use gpui_component::TitleBar;
 
 pub fn run_app(listener: PlatformListener, app: gpui::Application) {

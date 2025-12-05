@@ -24,7 +24,10 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::*;
+use gpui::{
+    canvas, div, img, list, AnyView, App, AvailableSpace, Bounds, Entity, FontWeight, ImageSource,
+    IntoElement, ListAlignment, Render, WeakEntity,
+};
 use image::{DynamicImage, ImageBuffer};
 use jiff::{Span, Timestamp, ToSpan};
 use log::error;
@@ -338,7 +341,7 @@ impl ClipboardListItem {
         .meta(cx.new_model(|_| self.copied_last).into_any())
         .build()
     }
-    fn delete(&self, view: WeakView<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
+    fn delete(&self, view: WeakEntity<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
         let _ = view.update(cx, |view, cx| {
             view.remove(self.kind.clone().into(), self.id, cx);
         });
@@ -357,7 +360,7 @@ impl ClipboardListItem {
         }
         Ok(())
     }
-    fn prune(age: Span, view: WeakView<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
+    fn prune(age: Span, view: WeakEntity<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
         let items = Self::all(db_items()).query()?;
         for item in items {
             if item.contents.copied_last < Timestamp::now().checked_sub(age).unwrap() {

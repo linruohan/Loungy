@@ -9,16 +9,6 @@
  *
  */
 
-use gpui::*;
-use log::debug;
-use parking_lot::{Mutex, MutexGuard};
-use serde::Deserialize;
-use std::{
-    ops::DerefMut,
-    rc::Rc,
-    time::{Duration, Instant},
-};
-
 use crate::{
     commands::root::list::RootListBuilder,
     components::{
@@ -28,6 +18,20 @@ use crate::{
     query::{TextEvent, TextInput, TextInputWeak},
     theme::{self, Theme},
     window::{LWindow, WindowStyle},
+};
+use gpui::{
+    bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement, AnyEntity,
+    AnyView, App, AsyncWindowContext, BorrowAppContext, Bounds, Context, Entity, FontWeight,
+    Global, Hsla, IntoElement, Keystroke, ParentElement, Pixels, Point, Render, RenderOnce,
+    SharedString, Size, Styled, VisualContext, WeakEntity, Window,
+};
+use log::debug;
+use parking_lot::{Mutex, MutexGuard};
+use serde::Deserialize;
+use std::{
+    ops::DerefMut,
+    rc::Rc,
+    time::{Duration, Instant},
 };
 
 pub struct LazyMutex<T> {
@@ -124,7 +128,7 @@ impl ToastState {
 }
 
 impl Render for ToastState {
-    fn render(&mut self, _: &mut LWindow, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         if let Some((el, bg, message, fade_in, fade_out)) = match self {
             ToastState::Success {
@@ -302,7 +306,7 @@ pub struct PopupToast {
 }
 
 impl Render for PopupToast {
-    fn render(&mut self, _: &mut LWindow, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
 
         let icon = if let Some(icon) = self.icon.clone() {
@@ -455,7 +459,7 @@ impl StateModel {
         });
     }
     pub fn update_async(f: impl FnOnce(&mut Self, &mut App), cx: &mut AsyncWindowContext) {
-        let _ = cx.update_global::<Self, _>(|this, window, cx| {
+        let _ = cx.update_global::<Self, _>(|this, _, cx| {
             f(this, cx);
         });
     }
@@ -588,7 +592,7 @@ fn key_string(el: Div, theme: &Theme, string: impl ToString) -> Div {
 }
 
 impl RenderOnce for Shortcut {
-    fn render(self, _: &mut LWindow, cx: &mut App) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         let mut el = div().flex().items_center();
         let shortcut = self.inner;
@@ -678,7 +682,7 @@ pub struct Action {
 }
 
 impl RenderOnce for Action {
-    fn render(self, _: &mut LWindow, cx: &mut App) -> impl IntoElement {
+    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
         let shortcut = if let Some(shortcut) = self.shortcut {
             div().child(shortcut)
         } else {
@@ -936,7 +940,7 @@ impl Actions {
 }
 
 impl Render for Actions {
-    fn render(&mut self, _: &mut LWindow, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let combined = self.combined(cx).clone();
         let theme = cx.global::<theme::Theme>();
         if let Some(action) = combined.first() {
@@ -958,7 +962,7 @@ impl Render for Actions {
 
 #[derive(Clone)]
 pub struct ActionsModel {
-    pub inner: WeakView<Actions>,
+    pub inner: WeakEntity<Actions>,
 }
 
 impl ActionsModel {

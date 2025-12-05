@@ -8,13 +8,13 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
-use gpui::*;
-
 use crate::components::shared::{Icon, Img};
 use crate::loader::ActiveLoaders;
 use crate::state::{StateItem, StateModel};
 use crate::theme::Theme;
+use gpui::{
+    div, App, Entity, InteractiveElement, IntoElement, MouseButton, ParentElement, Render, Styled,
+};
 
 pub struct Workspace {
     state: StateModel,

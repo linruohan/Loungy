@@ -11,11 +11,12 @@
 
 use std::{cmp::Reverse, collections::HashMap, sync::Arc};
 
-use async_std::{stream::StreamExt, task::spawn};
 use bonsaidb::core::schema::SerializedCollection;
-use gpui::*;
+use futures::{stream::Stream, StreamExt};
+use gpui::{AnyView, App, AsyncWindowContext, Entity, WeakEntity};
 use matrix_sdk::ruma::OwnedRoomId;
 use matrix_sdk_ui::{sync_service::State, timeline::RoomExt};
+use smol::spawn;
 
 use crate::{
     command,
@@ -83,7 +84,7 @@ pub struct MatrixCommandBuilder;
 
 async fn sync(
     session: Session,
-    view: WeakView<AsyncListItems>,
+    view: WeakEntity<AsyncListItems>,
     mut cx: AsyncWindowContext,
 ) -> Result<()> {
     let (client, ss) = {

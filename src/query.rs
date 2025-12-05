@@ -9,10 +9,13 @@
  *
  */
 
-use std::ops::Range;
-
-use gpui::*;
+use gpui::{
+    div, App, ClipboardItem, Entity, EventEmitter, FocusHandle, HighlightStyle, InteractiveElement,
+    InteractiveText, IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce, Styled,
+    StyledText, TextStyle, VisualContext, WeakEntity,
+};
 use log::debug;
+use std::ops::Range;
 
 use crate::theme::Theme;
 
@@ -39,7 +42,7 @@ impl TextInput {
 #[derive(Clone)]
 pub struct TextInputWeak {
     pub focus_handle: FocusHandle,
-    pub view: WeakView<TextView>,
+    pub view: WeakEntity<TextView>,
 }
 
 impl TextInputWeak {

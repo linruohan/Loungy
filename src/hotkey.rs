@@ -19,7 +19,7 @@ use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyEvent, GlobalHotKeyManager,
 };
-use gpui::*;
+use gpui::{App, BorrowAppContext, Global, Keystroke};
 use serde::{Deserialize, Serialize};
 
 use crate::{

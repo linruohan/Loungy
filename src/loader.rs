@@ -1,10 +1,12 @@
-use gpui::*;
+use crate::{state::LazyMutex, theme};
+use gpui::{
+    div, linear, relative, Animation, AnimationExt, App, IntoElement, ParentElement, RenderOnce,
+    Styled,
+};
 use std::{
     sync::{atomic::AtomicBool, Arc},
     time::{Duration, Instant},
 };
-
-use crate::{state::LazyMutex, theme};
 
 #[derive(Clone)]
 pub struct Loader(Arc<AtomicBool>);

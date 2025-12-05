@@ -18,7 +18,6 @@ use std::{
 };
 
 use anyhow::anyhow;
-use async_std::task::{spawn, spawn_blocking, JoinHandle};
 use futures::future::Shared;
 use futures::FutureExt;
 use gpui::*;
@@ -26,6 +25,8 @@ use log::debug;
 use parking_lot::Mutex;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
+use smol::{spawn, unblock};
+use tokio::task::spawn_blocking;
 use url::Url;
 
 pub use icon::Icon;
@@ -223,12 +224,12 @@ impl RenderOnce for Img {
 pub struct NoView;
 
 impl Render for NoView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }
 
-type FetchFaviconTask = Shared<JoinHandle<Result<SharedUri, Arc<anyhow::Error>>>>;
+type FetchFaviconTask = Shared<smol::Task<Result<SharedUri, Arc<anyhow::Error>>>>;
 
 static FAVICONS: OnceLock<Arc<Mutex<HashMap<String, FetchFaviconTask>>>> = OnceLock::new();
 
@@ -267,7 +268,7 @@ impl Favicon {
                 continue;
             };
 
-            let mut hrefs: Vec<String> = spawn_blocking(move || {
+            let mut hrefs: Vec<String> = unblock(move || {
                 let document = Html::parse_document(&html);
                 let selector = Selector::parse("link[rel~='icon'], link[rel~='shortcut icon'], link[rel~='alternate icon'], link[rel~='apple-touch-icon'], link[rel~='apple-touch-icon-precomposed']").unwrap();
 
@@ -333,7 +334,7 @@ impl Favicon {
 }
 
 impl Render for Favicon {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         if let Some(task) = self
             .task
             .get_or_init(|| {

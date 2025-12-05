@@ -9,11 +9,12 @@
  *
  */
 
-use std::time::Duration;
-
-use gpui::*;
-
 use crate::{components::shared::NoView, state::StateModel, theme::Theme};
+use gpui::{
+    App, AppContext, AsyncWindowContext, BorrowAppContext, Bounds, Entity, Global, Pixels, Point,
+    Size, WindowBounds, WindowKind, WindowOptions,
+};
+use std::time::Duration;
 
 pub static WIDTH: u32 = 800;
 pub static HEIGHT: u32 = 450;
