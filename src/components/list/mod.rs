@@ -10,9 +10,9 @@
  */
 
 use gpui::{
-    div, list, relative, AnyElement, AnyEntity, App, Entity, EventEmitter, FontWeight,
-    InteractiveElement, IntoElement, ListAlignment, ListOffset, ListScrollEvent, MouseButton,
-    ParentElement, Render, RenderOnce, SharedString, Styled,
+    div, list, relative, AnyElement, AnyEntity, App, Context, Entity, EventEmitter, FontWeight,
+    InteractiveElement, IntoElement, ListAlignment, ListOffset, ListScrollEvent, ListState,
+    MouseButton, ParentElement, Pixels, Render, RenderOnce, SharedString, Styled, Window,
 };
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},
@@ -392,7 +392,7 @@ impl Render for List {
                         .w(width)
                         .h_full()
                         .relative()
-                        .child(list(self.state.clone()).size_full().pr_1()),
+                        .child(list(self.state.clone(), ()).size_full().pr_1()),
                 )
                 .child(preview)
         }
@@ -544,6 +544,7 @@ impl List {
         let (selection_sender, r) = channel::<u64>();
         let selected = cx.new_model(|_| 0);
         let items: Entity<Vec<Item>> = cx.new_model(|_| vec![]);
+
         let mut list = Self {
             state: ListState::new(
                 0,
@@ -553,42 +554,6 @@ impl List {
                     ListAlignment::Top
                 },
                 Pixels(20.0),
-                {
-                    let selected = selected.clone();
-                    let items = items.clone();
-                    let sender = selection_sender.clone();
-                    let actions = context.actions.clone();
-                    move |i, cx| {
-                        let mut item = items.read(cx)[i].clone();
-                        let selected = item.id.eq(selected.read(cx));
-                        item.selected = selected;
-                        let action = item.actions.first().cloned();
-                        let actions = actions.inner.upgrade();
-                        if actions.is_none() {
-                            return div().into_any_element();
-                        }
-                        let actions = actions.unwrap().read(cx).clone();
-                        let sender = sender.clone();
-                        let id = item.id;
-                        div()
-                            .child(item)
-                            .on_mouse_down(MouseButton::Left, {
-                                move |ev, cx| match ev.click_count {
-                                    1 => {
-                                        let _ = sender.send(id);
-                                    }
-                                    2 => {
-                                        let mut actions = actions.clone();
-                                        if let Some(action) = &action {
-                                            (action.action)(&mut actions, cx);
-                                        }
-                                    }
-                                    _ => {}
-                                }
-                            })
-                            .into_any_element()
-                    }
-                },
             ),
             selected,
             items_all: vec![],
@@ -606,7 +571,7 @@ impl List {
 
         let update_receiver = context.update_receiver.clone();
         let view = cx.new_view(move |cx| {
-            cx.observe(&list.selected, move |this: &mut List, _, cx| {
+            cx.observe(&list.selected, move |this: &mut List, window, cx| {
                 if let Some((_, selected)) = this.selected(cx) {
                     let preview = if let Some(preview) = selected.preview.as_ref() {
                         if !selected
@@ -708,6 +673,42 @@ impl List {
         }
         view
     }
+    fn render_state(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let selected = self.selected.clone();
+        let items = self.items.clone();
+        let sender = self.selection_sender.clone();
+        let actions = context.actions.clone();
+        move |i, cx| {
+            let mut item = items.read(cx)[i].clone();
+            let selected = item.id.eq(selected.read(cx));
+            item.selected = selected;
+            let action = item.actions.first().cloned();
+            let actions = actions.inner.upgrade();
+            if actions.is_none() {
+                return div().into_any_element();
+            }
+            let actions = actions.unwrap().read(cx).clone();
+            let sender = sender.clone();
+            let id = item.id;
+            div()
+                .child(item)
+                .on_mouse_down(MouseButton::Left, {
+                    move |ev, cx| match ev.click_count {
+                        1 => {
+                            let _ = sender.send(id);
+                        }
+                        2 => {
+                            let mut actions = actions.clone();
+                            if let Some(action) = &action {
+                                (action.action)(&mut actions, cx);
+                            }
+                        }
+                        _ => {}
+                    }
+                })
+                .into_any_element()
+        }
+    }
 }
 
 pub struct AsyncListItems {
@@ -780,7 +781,7 @@ impl AsyncListItems {
 }
 
 impl Render for AsyncListItems {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }

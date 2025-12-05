@@ -97,7 +97,7 @@ impl LWindow {
     pub fn open(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                this.activate_window();
+                cx.activate(true);
                 this.hidden = false;
             }
         });
@@ -105,7 +105,7 @@ impl LWindow {
     pub fn toggle(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                this.activate_window();
+                cx.activate(true);
                 this.hidden = false;
             } else {
                 cx.hide();

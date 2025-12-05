@@ -20,7 +20,11 @@ use std::{
 use anyhow::anyhow;
 use futures::future::Shared;
 use futures::FutureExt;
-use gpui::*;
+use gpui::{
+    div, img, percentage, svg, Animation, AnimationExt, App, Context, Entity, Hsla, ImageSource,
+    IntoElement, ParentElement, Render, RenderOnce, Resource, SharedUri, Styled, StyledImage,
+    Transformation, Window,
+};
 use log::debug;
 use parking_lot::Mutex;
 use reqwest::StatusCode;
@@ -133,11 +137,13 @@ impl Img {
         self
     }
     pub fn file(mut self, src: PathBuf) -> Self {
-        self.src = ImgSource::Base(ImageSource::File(Arc::new(src)));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::Path(Arc::from(src))));
         self
     }
     pub fn url(mut self, src: impl ToString) -> Self {
-        self.src = ImgSource::Base(ImageSource::Uri(SharedUri::from(src.to_string())));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::Uri(SharedUri::from(
+            src.to_string(),
+        ))));
         self
     }
     pub fn mask(mut self, mask: ImgMask) -> Self {
@@ -243,7 +249,7 @@ pub struct Favicon {
 
 impl Favicon {
     async fn find_favicon(url: String) -> Result<SharedUri, anyhow::Error> {
-        let base_url = Url::parse(&url).unwrap();
+        let base_url = Url::parse(&url)?;
         let mut targets = vec![base_url.clone()];
         // if subdomain
         if let Some(domain) = base_url.domain() {
@@ -278,10 +284,13 @@ impl Favicon {
                     .collect()
             }).await;
 
-            hrefs.append(&mut vec![format!("/favicon.svg"), format!("/favicon.ico")]);
+            hrefs.append(&mut vec![
+                "/favicon.svg".to_string(),
+                "/favicon.ico".to_string(),
+            ]);
 
             for href in hrefs {
-                let absolute = Url::parse(&href).unwrap_or(url.join(&href).unwrap());
+                let absolute = Url::parse(&href).unwrap_or(url.join(&href)?);
                 let Ok(response) = client.get(absolute.to_string()).send().await else {
                     continue;
                 };

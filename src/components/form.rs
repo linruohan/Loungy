@@ -16,8 +16,9 @@ use crate::{
     theme::Theme,
 };
 use gpui::{
-    div, list, px, App, AppContext, Entity, FontWeight, InteractiveElement, IntoElement, Keystroke,
-    ListAlignment, MouseButton, ParentElement, Render, Styled,
+    div, list, px, App, AppContext, Context, Entity, FontWeight, InteractiveElement, IntoElement,
+    Keystroke, ListAlignment, ListState, Modifiers, MouseButton, ParentElement, Render, Styled,
+    Window,
 };
 use std::{any::Any, collections::HashMap};
 
@@ -450,9 +451,7 @@ impl Render for Form {
         div().p_4().size_full().child(
             list(
                 self.list.clone(),
-                cx.processor(|this, ix, window, cx| {
-                    div().child(self.inputs[ix]).py_2().into_any_element()
-                }),
+                cx.processor(|_, ix, _, _| div().child(self.inputs[ix]).py_2().into_any_element()),
             )
             .size_full(),
         )

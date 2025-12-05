@@ -7,7 +7,7 @@ use crate::{
     state::{Actions, StateModel},
     window::LWindow,
 };
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 use clap::{command, Arg, ValueEnum};
 use gpui::{AsyncWindowContext, Window};
 use serde::{Deserialize, Serialize};
@@ -24,12 +24,21 @@ pub enum PlatformListener {
 }
 
 impl PlatformListener {
-    pub async fn accept(&self) {
+    pub async fn accept(&self) -> Result<(PlatformStream, SocketAddr), Error> {
         match self {
             #[cfg(unix)]
-            PlatformListener::Unix(listener) => {}
+            PlatformListener::Unix(listener) => {
+                let (stream, _) = listener.accept().await?;
+                Ok((
+                    PlatformStream::Unix(stream),
+                    SocketAddr::from(([127, 0, 0, 1], 0)),
+                ))
+            }
             #[cfg(windows)]
-            PlatformListener::Tcp(_listener) => {}
+            PlatformListener::Tcp(listener) => {
+                let (stream, addr) = listener.accept().await?;
+                Ok((PlatformStream::Tcp(stream), addr))
+            }
         }
     }
 }

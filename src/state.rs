@@ -21,9 +21,9 @@ use crate::{
 };
 use gpui::{
     bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement, AnyEntity,
-    AnyView, App, AsyncWindowContext, BorrowAppContext, Bounds, Context, Entity, FontWeight,
-    Global, Hsla, IntoElement, Keystroke, ParentElement, Pixels, Point, Render, RenderOnce,
-    SharedString, Size, Styled, VisualContext, WeakEntity, Window,
+    AnyView, App, AsyncWindowContext, BorrowAppContext, Bounds, Context, Div, Entity, FontWeight,
+    Global, Hsla, IntoElement, Keystroke, Modifiers, ParentElement, Pixels, Point, Render,
+    RenderOnce, SharedString, Size, Styled, VisualContext, WeakEntity, Window,
 };
 use log::debug;
 use parking_lot::{Mutex, MutexGuard};
@@ -97,7 +97,7 @@ impl ToastState {
                                 let delta = (delta - 0.75) * 4.0;
                                 let mut color = color;
                                 color.a = 1.0 - delta;
-                                let size = Pixels(size.0 * delta * 2.0 + size.0);
+                                let size = Pixels(6.0 * delta * 2.0 + 6.0);
                                 div.bg(color).size(size)
                             }
                         },
@@ -284,7 +284,7 @@ impl Toast {
             }
             .options(bounds),
             |cx| {
-                cx.spawn(|mut cx| async move {
+                cx.spawn(cx, |mut cx| async move {
                     cx.background_executor().timer(Duration::from_secs(2)).await;
                     //cx.background_executor().timer(Duration::from_secs(2)).await;
                     let _ = cx.update_window(cx.window_handle(), |_, cx| {
@@ -375,7 +375,7 @@ impl StateItem {
                         && (Keystroke {
                             modifiers: Modifiers::default(),
                             key: "tab".to_string(),
-                            ime_key: None,
+                            key_char: None,
                         })
                         .eq(&ev.keystroke)
                     {
@@ -1034,13 +1034,15 @@ impl ActionsModel {
             cx.subscribe(&query.view, move |this, _, event, cx| {
                 match event {
                     TextEvent::Blur | TextEvent::Back => {
-                        this.show = false;
+                        // TODO
+                        // this.show = false;
                         cx.notify();
                     }
                     TextEvent::KeyDown(ev) => {
                         let key = "enter";
                         if Shortcut::new(key).get().eq(&ev.keystroke) {
-                            this.show = false;
+                            // TODO
+                            // this.show = false;
                             cx.notify();
                             let _ = list_clone.update(cx, |this2, cx| {
                                 if let Some(action) = this2.default_action(cx) {
@@ -1057,7 +1059,8 @@ impl ActionsModel {
                             return;
                         }
                         if ev.keystroke.key.as_str() == "escape" {
-                            this.show = false;
+                            // TODO
+                            // this.show = false;
                             cx.notify();
                         }
                     }
