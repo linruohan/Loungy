@@ -105,7 +105,7 @@ impl ListItem {
 }
 
 impl ItemComponent for ListItem {
-    fn render(&self, _selected: bool, cx: &mut App) -> AnyElement {
+    fn render(&self, _selected: bool, cx: &App) -> AnyElement {
         let theme = cx.global::<Theme>();
         let el = if let Some(img) = &self.img {
             div().child(div().mr_4().child(img.clone()))
@@ -522,7 +522,7 @@ impl List {
             });
             self.state.scroll_to(ListOffset {
                 item_ix: s,
-                offset_in_item: px(0.0),
+                offset_in_item: Pixels(0.0),
             })
         });
     }
@@ -602,7 +602,7 @@ impl List {
 
         let update_receiver = context.update_receiver.clone();
         let view = cx.new_view(move |cx| {
-            cx.observe(&list.selected, move |this: &mut List, _, cx: &mut App| {
+            cx.observe(&list.selected, move |this: &mut List, _, cx| {
                 if let Some((_, selected)) = this.selected(cx) {
                     let preview = if let Some(preview) = selected.preview.as_ref() {
                         if !selected

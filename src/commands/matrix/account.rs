@@ -24,7 +24,7 @@ use super::client::Session;
 pub struct AccountCreationBuilder;
 command!(AccountCreationBuilder);
 impl StateViewBuilder for AccountCreationBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Login...", cx);
         Form::new(
             vec![

@@ -104,7 +104,7 @@ pub struct Theme {
     pub crust: Hsla,
 }
 
-fn load_fonts(cx: &mut AppContext) -> gpui::Result<()> {
+fn load_fonts(cx: &mut App) -> gpui::Result<()> {
     let font_paths = cx.asset_source().list("fonts")?;
     let mut embedded_fonts = Vec::new();
     for font_path in font_paths {
@@ -170,7 +170,7 @@ impl Default for ThemeSettings {
 }
 
 impl Theme {
-    pub fn init(cx: &mut AppContext) {
+    pub fn init(cx: &mut App) {
         load_fonts(cx).expect("Failed to load fonts");
         let appearance = cx.window_appearance();
         let theme = Theme::mode(appearance);

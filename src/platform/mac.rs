@@ -13,7 +13,7 @@ use crate::components::shared::Img;
 use crate::paths::paths;
 use crate::window::Window;
 use cocoa::appkit::NSPasteboard;
-use gpui::{AsyncWindowContext, WindowContext};
+use gpui::{App, AsyncWindowContext};
 use std::time::Duration;
 use std::{
     fs,
@@ -153,7 +153,7 @@ swift!( fn copy_file(path: SRString));
 
 swift!( fn paste_file(path: SRString));
 
-pub fn close_and_paste(value: &str, formatting: bool, cx: &mut WindowContext) {
+pub fn close_and_paste(value: &str, formatting: bool, cx: &mut App) {
     Window::close(cx);
     let value = value.to_string();
     cx.spawn(move |mut cx| async move {
@@ -166,7 +166,7 @@ pub fn close_and_paste(value: &str, formatting: bool, cx: &mut WindowContext) {
     .detach();
 }
 
-pub fn close_and_paste_file(path: &Path, cx: &mut WindowContext) {
+pub fn close_and_paste_file(path: &Path, cx: &mut App) {
     Window::close(cx);
     let path = path.to_string_lossy().to_string();
     cx.spawn(move |mut cx| async move {

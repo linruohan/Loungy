@@ -45,11 +45,11 @@ use super::accounts::{
 
 #[derive(Clone)]
 pub struct BitwardenListBuilder {
-    view: View<AsyncListItems>,
+    view: Entity<AsyncListItems>,
 }
 command!(BitwardenListBuilder);
 impl StateViewBuilder for BitwardenListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your vault...", cx);
         if let Ok(accounts) = BitwardenAccount::all(db()).query() {
             if accounts.len() > 1 {
@@ -314,7 +314,7 @@ pub(super) fn db() -> &'static Database {
 }
 
 struct EntryModel {
-    inner: Model<(Vec<String>, HashMap<String, String>)>,
+    inner: Entity<(Vec<String>, HashMap<String, String>)>,
 }
 
 impl EntryModel {
@@ -384,7 +384,7 @@ impl EntryModel {
 }
 command!(BitwardenCommandBuilder);
 impl RootCommandBuilder for BitwardenCommandBuilder {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let accounts = BitwardenAccount::all(db()).query().unwrap_or_default();
             for account in accounts {

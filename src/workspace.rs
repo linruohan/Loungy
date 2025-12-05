@@ -21,7 +21,7 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
+    pub fn build(cx: &mut App) -> Entity<Self> {
         cx.new_view(|cx| {
             let state = StateModel::init(cx);
             Workspace { state }
@@ -30,7 +30,7 @@ impl Workspace {
 }
 
 impl Render for Workspace {
-    fn render(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         let stack: &Vec<StateItem> = self.state.inner.read(cx).stack.as_ref();
         let item = stack.last().unwrap();

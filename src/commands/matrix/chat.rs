@@ -63,8 +63,8 @@ pub(super) struct ChatRoom {
     pub(super) room: Arc<Room>,
 }
 
-pub trait OnMouseDown: Fn(&MouseDownEvent, &mut WindowContext) + 'static {}
-impl<F> OnMouseDown for F where F: Fn(&MouseDownEvent, &mut WindowContext) + 'static {}
+pub trait OnMouseDown: Fn(&MouseDownEvent, &mut App) + 'static {}
+impl<F> OnMouseDown for F where F: Fn(&MouseDownEvent, &mut App) + 'static {}
 
 #[derive(Clone)]
 pub(super) struct Reaction {
@@ -78,7 +78,7 @@ pub(super) struct Reaction {
 pub(super) struct Reactions(Vec<Reaction>);
 
 impl RenderOnce for Reactions {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         div().flex().children(self.0.into_iter().map(|reaction| {
             div()
@@ -123,7 +123,7 @@ pub(super) enum MessageContent {
 }
 
 impl RenderOnce for MessageContent {
-    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         match self {
             MessageContent::Text(t) => t.into_any_element(),
             MessageContent::Image(i) => img(i).w_64().h_48().into_any_element(),
@@ -222,7 +222,7 @@ impl Message {
 }
 
 impl ItemComponent for Message {
-    fn render(&self, selected: bool, cx: &WindowContext) -> AnyElement {
+    fn render(&self, selected: bool, cx: &App) -> AnyElement {
         let theme = cx.global::<Theme>();
         let show_avatar = !self.me && self.first;
         let show_reactions = !self.reactions.0.is_empty();
@@ -258,7 +258,7 @@ impl ItemComponent for Message {
                 };
                 el
             }
-            .flex_basis(px(0.0))
+            .flex_basis(Pixels(0.0))
             .max_w_4_5()
             .p_2()
             .bg(if selected {
@@ -457,7 +457,7 @@ async fn sync(
 
 command!(ChatRoom);
 impl StateViewBuilder for ChatRoom {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search this chat...", cx);
 
         let view = cx.new_view(|cx| {

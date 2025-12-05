@@ -918,7 +918,7 @@ pub enum Icon {
     UserRoundMinus,
     AlignVerticalDistributeCenter,
     SearchSlash,
-    View,
+    Entity,
     ArrowBigDownDash,
     MessageSquarePlus,
     RadioReceiver,

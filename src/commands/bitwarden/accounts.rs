@@ -38,7 +38,7 @@ pub(super) struct BitwardenPasswordPromptBuilder {
 command!(BitwardenPasswordPromptBuilder);
 
 impl StateViewBuilder for BitwardenPasswordPromptBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         let password = self.password.clone();
         Form::new(
             vec![
@@ -107,7 +107,7 @@ impl EventEmitter<Self> for BitwardenPasswordPromptBuilder {}
 pub struct BitwardenAccountFormBuilder;
 command!(BitwardenAccountFormBuilder);
 impl StateViewBuilder for BitwardenAccountFormBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         Form::new(
             vec![
                 Input::new(
@@ -219,7 +219,7 @@ impl StateViewBuilder for BitwardenAccountFormBuilder {
 pub struct BitwardenAccountListBuilder;
 command!(BitwardenAccountListBuilder);
 impl StateViewBuilder for BitwardenAccountListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your accounts...", cx);
         context.actions.update_global(
             vec![Action::new(
@@ -311,7 +311,7 @@ impl StateViewBuilder for BitwardenAccountListBuilder {
 pub struct BitwardenAccountCommandBuilder;
 command!(BitwardenAccountCommandBuilder);
 impl RootCommandBuilder for BitwardenAccountCommandBuilder {
-    fn build(&self, _: &mut WindowContext) -> RootCommand {
+    fn build(&self, _: &mut App) -> RootCommand {
         RootCommand::new(
             "bitwarden_accounts",
             "Search Vault",

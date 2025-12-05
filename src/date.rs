@@ -9,10 +9,10 @@
  *
  */
 
-use gpui::AppContext;
+use gpui::App;
 use jiff::{fmt::strtime, tz::TimeZone, Timestamp, ToSpan};
 
-pub fn format_date(date: Timestamp, _cx: &AppContext) -> String {
+pub fn format_date(date: Timestamp, _cx: &App) -> String {
     let tz = TimeZone::system();
     let zoned = date.to_zoned(tz.clone());
     let zoned_now = Timestamp::now().to_zoned(tz.clone());

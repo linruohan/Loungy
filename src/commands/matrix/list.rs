@@ -39,12 +39,12 @@ use super::{
 
 #[derive(Clone)]
 struct RoomList {
-    view: View<AsyncListItems>,
+    view: Entity<AsyncListItems>,
 }
 
 command!(RoomList);
 impl StateViewBuilder for RoomList {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your rooms...", cx);
         if let Ok(accounts) = Session::all(db()).query() {
             if accounts.len() > 1 {
@@ -234,7 +234,7 @@ async fn sync(
 }
 command!(MatrixCommandBuilder);
 impl RootCommandBuilder for MatrixCommandBuilder {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let db = db();
             let sessions = Session::all(db).query().unwrap_or_default();

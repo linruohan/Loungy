@@ -64,7 +64,7 @@ impl Compose {
 }
 command!(Compose);
 impl StateViewBuilder for Compose {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Type a message...", cx);
 
         let query = context.query.clone();

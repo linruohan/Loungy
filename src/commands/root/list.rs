@@ -9,11 +9,11 @@
  *
  */
 
+use std::{collections::HashMap, time::Duration};
+
 use gpui::*;
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
-use std::process::id;
-use std::{collections::HashMap, time::Duration};
 
 use crate::{
     command,

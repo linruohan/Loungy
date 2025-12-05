@@ -60,7 +60,7 @@ pub struct TailscaleListBuilder;
 
 command!(TailscaleListBuilder);
 impl StateViewBuilder for TailscaleListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search for peers...", cx);
         context.actions.set_dropdown(
             "online",
@@ -186,7 +186,7 @@ pub struct TailscaleCommandBuilder;
 command!(TailscaleCommandBuilder);
 
 impl RootCommandBuilder for TailscaleCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "tailscale",
             "Search Peers",
