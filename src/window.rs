@@ -90,13 +90,13 @@ impl Window {
             hidden: false,
         });
     }
-    pub fn is_open(cx: &AsyncAppContext) -> bool {
+    pub fn is_open(cx: &AsyncWindowContext) -> bool {
         cx.read_global::<Self, _>(|w, _| !w.hidden).unwrap_or(false)
     }
     pub fn open(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                cx.activate_window();
+                this.activate_window();
                 this.hidden = false;
             }
         });
@@ -104,7 +104,7 @@ impl Window {
     pub fn toggle(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
-                cx.activate_window();
+                this.activate_window();
                 this.hidden = false;
             } else {
                 cx.hide();

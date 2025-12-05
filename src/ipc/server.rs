@@ -1,6 +1,5 @@
 use smol::io::{AsyncReadExt, AsyncWriteExt};
 use std::net::{Ipv4Addr, SocketAddr};
-use std::path::Path;
 
 use super::{SOCKET_PATH, SOCKET_PORT};
 use crate::{
@@ -10,7 +9,7 @@ use crate::{
 };
 use anyhow::anyhow;
 use clap::{command, Arg, ValueEnum};
-use gpui::{AsyncApp, AsyncWindowContext};
+use gpui::AsyncWindowContext;
 use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use smol::net::unix::{UnixListener, UnixStream};
@@ -23,6 +22,18 @@ pub enum PlatformListener {
     #[cfg(windows)]
     Tcp(smol::net::TcpListener),
 }
+
+impl PlatformListener {
+    pub async fn accept(&self) {
+        match self {
+            #[cfg(unix)]
+            PlatformListener::Unix(listener) => {}
+            #[cfg(windows)]
+            PlatformListener::Tcp(listener) => {}
+        }
+    }
+}
+
 // 平台无关的流枚举
 pub enum PlatformStream {
     #[cfg(unix)]
@@ -79,7 +90,7 @@ pub async fn start_server(
     loop {
         let (stream, _) = listener.accept().await?;
         cx.spawn(|cx| handle_client(stream, commands.clone(), cx))
-          .detach();
+            .detach();
     }
 }
 

@@ -9,8 +9,6 @@
  *
  */
 
-use async_std::prelude::FutureExt;
-use async_std::stream::Extend;
 use std::{env, path::PathBuf, sync::OnceLock};
 
 pub struct Paths {

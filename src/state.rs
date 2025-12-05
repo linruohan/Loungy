@@ -734,7 +734,7 @@ pub struct Dropdown {
 }
 
 impl Render for Dropdown {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut gpui::Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         if self.items.is_empty() {
             return div();
