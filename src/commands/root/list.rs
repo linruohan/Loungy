@@ -24,7 +24,7 @@ use crate::{
     },
     platform::{get_application_data, get_application_files, get_application_folders},
     state::{Action, CommandTrait, StateViewBuilder, StateViewContext},
-    window::Window,
+    window::LWindow,
 };
 
 use super::numbat::{Numbat, NumbatWrapper};
@@ -73,7 +73,7 @@ impl StateViewBuilder for RootListBuilder {
                                             Some(Icon::Clipboard),
                                             cx,
                                         );
-                                        Window::close(cx);
+                                        LWindow::close(cx);
                                     }
                                 },
                                 false,
@@ -119,7 +119,7 @@ impl StateViewBuilder for RootListBuilder {
                                     {
                                         let ex = data.tag == "System Setting";
                                         move |_, cx| {
-                                            Window::close(cx);
+                                            LWindow::close(cx);
                                             let id = id.clone();
                                             let mut command = std::process::Command::new("open");
                                             if ex {
@@ -137,7 +137,7 @@ impl StateViewBuilder for RootListBuilder {
                                     #[cfg(target_os = "linux")]
                                     {
                                         move |_, cx| {
-                                            Window::close(cx);
+                                            LWindow::close(cx);
                                             let mut command =
                                                 std::process::Command::new("gtk-launch");
                                             command.arg(id.clone());

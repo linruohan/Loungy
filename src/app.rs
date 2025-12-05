@@ -12,7 +12,7 @@
 use crate::ipc::server::PlatformListener;
 use crate::{
     assets::Assets, commands::RootCommands, hotkey::HotkeyManager, ipc::server::start_server,
-    theme::Theme, window::Window, workspace::Workspace,
+    theme::Theme, window::LWindow, workspace::Workspace,
 };
 use gpui::*;
 use gpui_component::TitleBar;
@@ -54,7 +54,7 @@ pub fn run_app(listener: PlatformListener, app: gpui::Application) {
             cx.spawn(|cx| start_server(listener, cx), ()).detach();
             HotkeyManager::init(cx);
             let view = Workspace::build(cx);
-            Window::init(cx);
+            LWindow::init(cx);
             view
         });
     });

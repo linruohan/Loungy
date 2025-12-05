@@ -5,11 +5,11 @@ use super::{SOCKET_PATH, SOCKET_PORT};
 use crate::{
     commands::RootCommands,
     state::{Actions, StateModel},
-    window::Window,
+    window::LWindow,
 };
 use anyhow::anyhow;
 use clap::{command, Arg, ValueEnum};
-use gpui::AsyncWindowContext;
+use gpui::{AsyncWindowContext, Window};
 use serde::{Deserialize, Serialize};
 #[cfg(unix)]
 use smol::net::unix::{UnixListener, UnixStream};
@@ -108,16 +108,16 @@ async fn handle_client(
 
     let matches: CommandPayload = serde_json::from_slice(&buf[..n])?;
 
-    let _ = cx.update::<anyhow::Result<()>>(|cx| {
+    let _ = cx.update::<anyhow::Result<()>>(|window, cx| {
         match matches.action {
             TopLevelCommand::Toggle => {
-                Window::toggle(cx);
+                LWindow::toggle(cx);
             }
             TopLevelCommand::Show => {
-                Window::open(cx);
+                LWindow::open(cx);
             }
             TopLevelCommand::Hide => {
-                Window::close(cx);
+                LWindow::close(cx);
             }
             TopLevelCommand::Quit => {
                 cx.quit();
@@ -147,9 +147,9 @@ async fn handle_client(
                         cx,
                     );
                     (command.action)(&mut Actions::default(cx), cx);
-                    Window::open(cx);
+                    LWindow::open(cx);
                 } else {
-                    Window::toggle(cx);
+                    LWindow::toggle(cx);
                 }
             }
             TopLevelCommand::Pipe => {}

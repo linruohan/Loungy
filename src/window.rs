@@ -61,19 +61,19 @@ impl WindowStyle {
     }
 }
 
-pub struct Window {
+pub struct LWindow {
     inner: Entity<NoView>,
     hidden: bool,
 }
 
-impl Window {
+impl LWindow {
     pub fn init(cx: &mut App) {
         let view = cx.new_view(|cx| {
             cx.observe_window_activation(|_, cx| {
                 if cx.is_window_active() {
                     return;
                 };
-                Window::close(cx);
+                LWindow::close(cx);
             })
             .detach();
             cx.observe_window_appearance(|_, cx| {
@@ -144,4 +144,4 @@ impl Window {
     }
 }
 
-impl Global for Window {}
+impl Global for LWindow {}

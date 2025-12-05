@@ -27,7 +27,7 @@ use crate::{
     },
     query::{TextEvent, TextInput, TextInputWeak},
     theme::{self, Theme},
-    window::{Window, WindowStyle},
+    window::{LWindow, WindowStyle},
 };
 
 pub struct LazyMutex<T> {
@@ -124,7 +124,7 @@ impl ToastState {
 }
 
 impl Render for ToastState {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut LWindow, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         if let Some((el, bg, message, fade_in, fade_out)) = match self {
             ToastState::Success {
@@ -272,7 +272,7 @@ impl Toast {
                 height: Pixels::from(1080.0),
             },
         });
-        Window::close(cx);
+        LWindow::close(cx);
         let _ = cx.open_window(
             WindowStyle::Toast {
                 width: message.to_string().len() as u32 * 12,
@@ -302,7 +302,7 @@ pub struct PopupToast {
 }
 
 impl Render for PopupToast {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut LWindow, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
 
         let icon = if let Some(icon) = self.icon.clone() {
@@ -380,7 +380,7 @@ impl StateItem {
                 });
 
                 if ev.keystroke.key.as_str() == "escape" {
-                    Window::close(cx);
+                    LWindow::close(cx);
                 }
             }
             TextEvent::Back => {
@@ -455,7 +455,7 @@ impl StateModel {
         });
     }
     pub fn update_async(f: impl FnOnce(&mut Self, &mut App), cx: &mut AsyncWindowContext) {
-        let _ = cx.update_global::<Self, _>(|this, cx| {
+        let _ = cx.update_global::<Self, _>(|this, window, cx| {
             f(this, cx);
         });
     }
@@ -588,7 +588,7 @@ fn key_string(el: Div, theme: &Theme, string: impl ToString) -> Div {
 }
 
 impl RenderOnce for Shortcut {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _: &mut LWindow, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         let mut el = div().flex().items_center();
         let shortcut = self.inner;
@@ -678,7 +678,7 @@ pub struct Action {
 }
 
 impl RenderOnce for Action {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, _: &mut LWindow, cx: &mut App) -> impl IntoElement {
         let shortcut = if let Some(shortcut) = self.shortcut {
             div().child(shortcut)
         } else {
@@ -936,7 +936,7 @@ impl Actions {
 }
 
 impl Render for Actions {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut LWindow, cx: &mut Context<Self>) -> impl IntoElement {
         let combined = self.combined(cx).clone();
         let theme = cx.global::<theme::Theme>();
         if let Some(action) = combined.first() {
