@@ -472,42 +472,17 @@ impl StateModel {
         //     f(this, cx);
         // });
         // 使用GPUI的任务系统确保安全更新
-        cx.background_executor().spawn({
-            let cx = cx.clone();
-            async move {
-                cx.update(|cx| {
-                    cx.update_global::<Self, _>(|this, cx| f(this, cx));
-                })
-                  .ok();
-            }
-        }).detach();
-    }
-
-    /// 带窗口上下文的更新方法
-    pub fn update_window<F>(
-        f: F,
-        window: &mut Window,
-        cx: &mut App,
-    ) where
-            F: FnOnce(&mut Self, &mut Window, &mut App) + Send + 'static,
-    {
-        if !cx.has_global::<Self>() {
-            log::error!("StateModel not initialized");
-            return;
-        }
-
-        cx.background_executor().spawn({
-            let cx = cx.clone();
-            let window_id = window.id();
-            async move {
-                cx.update_window(window_id, |cx| {
-                    cx.update_global::<Self, _>(|this, cx| {
-                        f(this, window, cx)
-                    });
-                })
-                  .ok();
-            }
-        }).detach();
+        cx.background_executor()
+          .spawn({
+              let cx = cx.clone();
+              async move {
+                  cx.update(|cx| {
+                      cx.update_global::<Self, _>(|this, cx| f(this, cx));
+                  })
+                    .ok();
+              }
+          })
+          .detach();
     }
 
     pub fn update_async(f: impl FnOnce(&mut Self, &mut App), cx: &mut AsyncWindowContext) {

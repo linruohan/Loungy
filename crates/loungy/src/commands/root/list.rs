@@ -6,17 +6,17 @@
 //  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
 //
 
-use std::{collections::HashMap, time::Duration};
 use gpui::{AnyView, App, ClipboardItem};
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
+use std::{collections::HashMap, time::Duration};
 
 use super::numbatl::{Numbat, NumbatWrapper};
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder, RootCommands},
     components::{
-        list::{nucleoo::fuzzy_match, Accessory, Item, ItemBuilder, LListItem, ListBuilder},
+        list::{Accessory, Item, ItemBuilder, LListItem, ListBuilder, nucleoo::fuzzy_match},
         shared::{Icon, Img},
     },
     platform::{get_application_data, get_application_files, get_application_folders},
