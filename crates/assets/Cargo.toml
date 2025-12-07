@@ -1,0 +1,12 @@
+[package]
+name = "loungy-assets"
+edition.workspace = true
+version = "0.5.0-preview2"
+
+[lib]
+doctest = false
+
+[dependencies]
+anyhow.workspace = true
+gpui.workspace = true
+rust-embed = { version = "8.7.2", features = ["interpolate-folder-path"] }
