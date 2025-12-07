@@ -7,9 +7,7 @@
 //
 
 use std::{collections::HashMap, time::Duration};
-
-use bonsaidb::core::schema::SerializedCollection;
-use gpui::*;
+use gpui::{AnyView, App, ClipboardItem};
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
 
@@ -18,7 +16,7 @@ use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder, RootCommands},
     components::{
-        list::{Accessory, Item, ItemBuilder, LListItem, ListBuilder, nucleoo::fuzzy_match},
+        list::{nucleoo::fuzzy_match, Accessory, Item, ItemBuilder, LListItem, ListBuilder},
         shared::{Icon, Img},
     },
     platform::{get_application_data, get_application_files, get_application_folders},
@@ -35,7 +33,7 @@ impl StateViewBuilder for RootListBuilder {
             .query
             .set_placeholder("Search for apps and commands...", cx);
         let numbat = Numbat::init(&context.query, cx);
-        let commands = RootCommands::list(cx);
+        let commands = RootCommands::list(window, cx);
 
         let list = ListBuilder::new()
             .filter(move |this, cx| {
@@ -256,7 +254,7 @@ impl StateViewBuilder for RootListBuilder {
 pub struct LoungyCommandBuilder;
 command!(LoungyCommandBuilder);
 impl RootCommandBuilder for LoungyCommandBuilder {
-    fn build(&self, _cx: &mut App) -> RootCommand {
+    fn build(&self, _: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "loungy",
             "Loungy",

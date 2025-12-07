@@ -19,7 +19,8 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::{AnyView, App, AsyncWindowContext, Entity};
+use gpui::{AnyView, App, AsyncWindowContext, Entity, Window};
+use gpui_component::list::ListItem;
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -49,7 +50,7 @@ pub struct BitwardenListBuilder {
 }
 command!(BitwardenListBuilder);
 impl StateViewBuilder for BitwardenListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your vault...", cx);
         if let Ok(accounts) = BitwardenAccount::all(db()).query() {
             if accounts.len() > 1 {
@@ -93,6 +94,7 @@ impl StateViewBuilder for BitwardenListBuilder {
                     }
                 },
                 context,
+                window,
                 cx,
             )
             .into()
@@ -384,8 +386,8 @@ impl EntryModel {
 }
 command!(BitwardenCommandBuilder);
 impl RootCommandBuilder for BitwardenCommandBuilder {
-    fn build(&self, cx: &mut App) -> RootCommand {
-        let view = cx.new_view(|cx| {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
+        let view = cx.new(|cx| {
             let accounts = BitwardenAccount::all(db()).query().unwrap_or_default();
             for account in accounts {
                 let mut account = account.contents;
@@ -596,16 +598,19 @@ impl RootCommandBuilder for BitwardenCommandBuilder {
             Icon::Lock,
             vec!["Passwords"],
             None,
-            move |_, cx| {
+            move |actions, cx| {
                 let view = view.clone();
                 let accounts = BitwardenAccount::all(db());
                 if accounts.count().unwrap_or_default() == 0 {
                     StateModel::update(
-                        |this, cx| this.push(BitwardenAccountFormBuilder {}, cx),
+                        |this, cx| this.push(BitwardenAccountFormBuilder {}, window, cx),
                         cx,
                     );
                 } else {
-                    StateModel::update(|this, cx| this.push(BitwardenListBuilder { view }, cx), cx);
+                    StateModel::update(
+                        |this, cx| this.push(BitwardenListBuilder { view }, window, cx),
+                        cx,
+                    );
                 };
             },
         )

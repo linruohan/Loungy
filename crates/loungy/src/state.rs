@@ -5,10 +5,10 @@ use std::{
 };
 
 use gpui::{
-    Animation, AnimationExt, AnyElement, AnyEntity, AnyView, App, AppContext, AsyncWindowContext,
-    BorrowAppContext, Bounds, Context, Div, Entity, FontWeight, Global, Hsla, IntoElement,
-    Keystroke, Modifiers, ParentElement, Pixels, Point, Render, RenderOnce, SharedString, Size,
-    Styled, WeakEntity, Window, bounce, div, ease_in_out, relative, svg,
+    bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement,
+    AnyEntity, AnyView, App, AppContext, AsyncWindowContext, BorrowAppContext, Bounds, Context, Div,
+    Entity, FontWeight, Global, Hsla, IntoElement, Keystroke, Modifiers, ParentElement, Pixels,
+    Point, Render, RenderOnce, SharedString, Size, Styled, WeakEntity, Window,
 };
 use log::debug;
 use parking_lot::{Mutex, MutexGuard};
@@ -721,7 +721,7 @@ impl LAction {
         image: Img,
         label: impl ToString,
         shortcut: Option<Shortcut>,
-        action: impl LActionFn + 'static,
+        action: impl LActionFn + Send + Sync + 'static,
         hide: bool,
     ) -> Self {
         Self {

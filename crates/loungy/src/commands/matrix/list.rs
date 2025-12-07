@@ -12,8 +12,9 @@
 use std::{cmp::Reverse, collections::HashMap, sync::Arc};
 
 use bonsaidb::core::schema::SerializedCollection;
-use futures::{stream::Stream, StreamExt};
-use gpui::{AnyView, App, AsyncWindowContext, Entity, WeakEntity};
+use futures::{StreamExt, stream::Stream};
+use gpui::{AnyView, App, AsyncWindowContext, Entity, WeakEntity, Window};
+use gpui_component::list::ListItem;
 use matrix_sdk::ruma::OwnedRoomId;
 use matrix_sdk_ui::{sync_service::State, timeline::RoomExt};
 use smol::spawn;
@@ -33,7 +34,7 @@ use crate::{
 use super::{
     account::AccountCreationBuilder,
     chat::ChatRoom,
-    client::{db, Session},
+    client::{Session, db},
     compose::{Compose, ComposeKind},
     mxc::mxc_to_http,
 };
@@ -45,7 +46,7 @@ struct RoomList {
 
 command!(RoomList);
 impl StateViewBuilder for RoomList {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your rooms...", cx);
         if let Ok(accounts) = Session::all(db()).query() {
             if accounts.len() > 1 {
@@ -74,6 +75,7 @@ impl StateViewBuilder for RoomList {
                     Ok(Some(items))
                 },
                 context,
+                window,
                 cx,
             )
             .into()
@@ -235,8 +237,8 @@ async fn sync(
 }
 command!(MatrixCommandBuilder);
 impl RootCommandBuilder for MatrixCommandBuilder {
-    fn build(&self, cx: &mut App) -> RootCommand {
-        let view = cx.new_view(|cx| {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
+        let view = cx.new(|cx| {
             let db = db();
             let sessions = Session::all(db).query().unwrap_or_default();
             for session in sessions {
@@ -253,13 +255,16 @@ impl RootCommandBuilder for MatrixCommandBuilder {
             Icon::MessageCircle,
             vec!["Chat", "Messages"],
             None,
-            move |_, cx| {
+            move |actions, cx| {
                 let view = view.clone();
                 let sessions = Session::all(db());
                 if sessions.count().unwrap_or_default() == 0 {
-                    StateModel::update(|this, cx| this.push(AccountCreationBuilder, cx), cx);
+                    StateModel::update(
+                        |this, cx| this.push(AccountCreationBuilder, window, cx),
+                        cx,
+                    );
                 } else {
-                    StateModel::update(|this, cx| this.push(RoomList { view }, cx), cx);
+                    StateModel::update(|this, cx| this.push(RoomList { view }, window, cx), cx);
                 };
             },
         )

@@ -19,14 +19,14 @@ use bonsaidb::{
     local::Database,
 };
 use gpui::AsyncWindowContext;
-use matrix_sdk::{matrix_auth::MatrixSession, ruma::OwnedUserId, Client};
+use matrix_sdk::{Client, matrix_auth::MatrixSession, ruma::OwnedUserId};
 use matrix_sdk_ui::sync_service::SyncService;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     db::Db,
-    paths::{paths, NAME},
+    paths::{NAME, paths},
     state::{Actions, StateModel},
 };
 

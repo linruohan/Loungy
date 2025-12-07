@@ -12,13 +12,13 @@
 use crate::{
     components::shared::{Icon, Img},
     query::{TextEvent, TextInputWeak},
-    state::{Action, Actions, Shortcut, StateViewContext},
+    state::{Actions, LAction, Shortcut, StateViewContext},
     theme::Theme,
 };
 use gpui::{
-    div, list, px, App, AppContext, Context, Entity, FontWeight, InteractiveElement, IntoElement,
-    Keystroke, ListAlignment, ListState, Modifiers, MouseButton, ParentElement, Render, Styled,
-    Window,
+    App, AppContext, Context, Entity, FontWeight, InteractiveElement, IntoElement, Keystroke,
+    ListAlignment, ListState, Modifiers, MouseButton, ParentElement, Render, Styled, Window, div,
+    list, px,
 };
 use std::{any::Any, collections::HashMap};
 
@@ -192,7 +192,7 @@ impl Render for InputView {
                     div().into_any_element()
                 },
             ))
-            .on_mouse_down(MouseButton::Left, move |_, cx| {
+            .on_mouse_down(MouseButton::Left, move |_, _, cx| {
                 fm.update(cx, |this, cx| {
                     *this = index;
                     cx.notify();
@@ -279,7 +279,7 @@ impl InputView {
             }
         }
         if let TextEvent::KeyDown(e) = event {
-            if (Shortcut::new("tab").shift().get()).eq(&e.keystroke) {
+            if Shortcut::new("tab").shift().get().eq(&e.keystroke) {
                 self.focus_model.update(cx, |this, cx| {
                     if this > &mut 0 {
                         *this -= 1;
@@ -287,7 +287,7 @@ impl InputView {
                     }
                 })
                 //
-            } else if (Shortcut::new("tab").get()).eq(&e.keystroke) {
+            } else if Shortcut::new("tab").get().eq(&e.keystroke) {
                 self.focus_model.update(cx, |this, cx| {
                     *this += 1;
                     cx.notify();
@@ -302,7 +302,7 @@ impl InputView {
         focus_model: Entity<usize>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new_view(|cx| {
+        cx.new(|cx| {
             cx.observe(&focus_model, move |input: &mut InputView, focused, cx| {
                 let old = input.focused;
                 let new = index.eq(focused.read(cx));
@@ -379,20 +379,20 @@ impl<'a> Clone for Box<dyn 'a + SubmitFn> {
     }
 }
 
-pub struct Form {
+pub struct LForm {
     list: ListState,
     inputs: Vec<Entity<InputView>>,
 }
 
-impl Form {
+impl LForm {
     pub fn new(
         inputs: Vec<Input>,
         submit: impl SubmitFn + 'static,
         context: &mut StateViewContext,
-        window: &mut Window,
+        _: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
-        let focus_model: Entity<usize> = cx.new_model(|_| 0);
+        let focus_model: Entity<usize> = cx.new(|_| 0);
         let inputs: Vec<Entity<InputView>> = inputs
             .into_iter()
             .enumerate()
@@ -406,7 +406,7 @@ impl Form {
 
         if let Some(inner) = context.actions.inner.upgrade() {
             context.actions.update_local(
-                vec![Action::new(
+                vec![LAction::new(
                     Img::default().icon(Icon::PlusSquare),
                     "Submit",
                     None,
@@ -446,12 +446,13 @@ impl Form {
     }
 }
 
-impl Render for Form {
+impl Render for LForm {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let inputs = self.inputs.clone();
         div().p_4().size_full().child(
             list(
                 self.list.clone(),
-                cx.processor(|_, ix, _, _| div().child(self.inputs[ix]).py_2().into_any_element()),
+                cx.processor(|_, ix, _, _| div().child(inputs[ix]).py_2().into_any_element()),
             )
             .size_full(),
         )

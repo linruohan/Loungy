@@ -11,12 +11,12 @@
 
 use async_std::{
     stream::StreamExt,
-    task::{sleep, spawn, JoinHandle},
+    task::{JoinHandle, sleep, spawn},
 };
-use futures::{future::Shared, FutureExt};
+use futures::{FutureExt, future::Shared};
 use gpui::{
-    div, img, AnyElement, AnyEntity, AnyView, App, AsyncWindowContext, FontWeight, ImageSource,
-    IntoElement, MouseButton, MouseDownEvent, RenderOnce, WeakEntity,
+    AnyElement, AnyEntity, AnyView, App, AsyncWindowContext, FontWeight, ImageSource, IntoElement,
+    MouseButton, MouseDownEvent, RenderOnce, WeakEntity, div, img,
 };
 use gpui_macros::IntoElement;
 use jiff::Timestamp;
@@ -25,19 +25,19 @@ use url::Url;
 
 use log::debug;
 use matrix_sdk::{
+    Room,
     ruma::{
+        OwnedUserId,
         events::{
             relation::Annotation,
-            room::{message::MessageType, MediaSource},
+            room::{MediaSource, message::MessageType},
         },
-        OwnedUserId,
     },
-    Room,
 };
 use matrix_sdk_ui::{
+    Timeline,
     sync_service::SyncService,
     timeline::{EventTimelineItem, PaginationOptions, TimelineDetails, TimelineItemContent},
-    Timeline,
 };
 
 use crate::{

@@ -9,17 +9,17 @@
  *
  */
 
-use gpui::{AnyView, App, Keystroke};
+use gpui::{AnyView, App, Keystroke, Window};
 use serde::Deserialize;
 use serde_json::Value;
 use std::time::Duration;
-use swift_rs::{swift, SRData};
+use swift_rs::{SRData, swift};
 
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder},
     components::{
-        list::{Accessory, ItemBuilder, ListBuilder, ListItem},
+        list::{Accessory, ItemBuilder, LListItem, ListBuilder},
         shared::{Icon, Img},
     },
     state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
@@ -44,7 +44,7 @@ swift!( pub fn menu_item_select(data: SRData));
 pub struct MenuListBuilder;
 command!(MenuListBuilder);
 impl StateViewBuilder for MenuListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search for menu items...", cx);
@@ -87,7 +87,7 @@ impl StateViewBuilder for MenuListBuilder {
                                     };
 
                                     ItemBuilder::new(item.path.clone(), {
-                                        ListItem::new(
+                                        LListItem::new(
                                             None,
                                             name.clone(),
                                             Some(subtitle.clone()),
@@ -109,6 +109,7 @@ impl StateViewBuilder for MenuListBuilder {
                     }
                 },
                 context,
+                window,
                 cx,
             )
             .into()
@@ -119,7 +120,7 @@ pub struct MenuCommandBuilder;
 command!(MenuCommandBuilder);
 
 impl RootCommandBuilder for MenuCommandBuilder {
-    fn build(&self, _cx: &mut App) -> RootCommand {
+    fn build(&self, window: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "macos_menu",
             "Search Menu Items",
@@ -127,8 +128,8 @@ impl RootCommandBuilder for MenuCommandBuilder {
             Icon::Library,
             vec!["MacOS", "Apple"],
             None,
-            |_, cx| {
-                StateModel::update(|this, cx| this.push(MenuListBuilder, cx), cx);
+            |actions, cx| {
+                StateModel::update(|this, cx| this.push(MenuListBuilder, window, cx), cx);
             },
         )
     }

@@ -25,9 +25,10 @@ use bonsaidb::{
     local::Database,
 };
 use gpui::{
-    canvas, div, img, list, AnyView, App, AvailableSpace, Bounds, Entity, FontWeight, ImageSource,
-    IntoElement, ListAlignment, Render, WeakEntity,
+    AnyView, App, AvailableSpace, Bounds, Entity, FontWeight, ImageSource, IntoElement,
+    ListAlignment, Render, WeakEntity, Window, canvas, div, img, list,
 };
+use gpui_component::list::ListItem;
 use image::{DynamicImage, ImageBuffer};
 use jiff::{Span, Timestamp, ToSpan};
 use log::error;
@@ -39,15 +40,15 @@ use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder},
     components::{
-        list::{AsyncListItems, Item, ItemBuilder, ListBuilder, ListItem},
+        list::{AsyncListItems, ItemBuilder, LItem, LListItem, ListBuilder},
         shared::{Icon, Img, ImgMask, ImgSize, ObjectFit},
     },
     date::format_date,
     db::Db,
     paths::paths,
     platform::{
-        clipboard, close_and_paste, close_and_paste_file, get_frontmost_application_data, ocr,
-        AppData, ClipboardWatcher,
+        AppData, ClipboardWatcher, clipboard, close_and_paste, close_and_paste_file,
+        get_frontmost_application_data, ocr,
     },
     state::{
         Action, CommandTrait, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
@@ -61,7 +62,7 @@ pub struct ClipboardListBuilder {
 }
 command!(ClipboardListBuilder);
 impl StateViewBuilder for ClipboardListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search your clipboard history...", cx);
@@ -121,6 +122,7 @@ impl StateViewBuilder for ClipboardListBuilder {
                     Ok(Some(items))
                 },
                 context,
+                window,
                 cx,
             )
             .into()
@@ -585,8 +587,8 @@ impl Render for ClipboardPreview {
 command!(ClipboardPreview);
 
 impl StateViewBuilder for ClipboardPreview {
-    fn build(&self, _context: &mut StateViewContext, cx: &mut App) -> AnyView {
-        cx.new_view(|_| self.clone()).into()
+    fn build(&self, _context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
+        cx.new(|_| self.clone()).into()
     }
 }
 
@@ -603,7 +605,7 @@ pub(super) fn db_detail() -> &'static Database {
 pub struct ClipboardCommandBuilder;
 command!(ClipboardCommandBuilder);
 impl RootCommandBuilder for ClipboardCommandBuilder {
-    fn build(&self, cx: &mut App) -> RootCommand {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let mut list_items = AsyncListItems::new();
             let items = ClipboardListItem::all(db_items())
@@ -797,9 +799,12 @@ impl RootCommandBuilder for ClipboardCommandBuilder {
             Icon::Clipboard,
             Vec::<String>::new(),
             None,
-            move |_, cx| {
+            move |actions, cx| {
                 let view = view.clone();
-                StateModel::update(|this, cx| this.push(ClipboardListBuilder { view }, cx), cx);
+                StateModel::update(
+                    |this, cx| this.push(ClipboardListBuilder { view }, window, cx),
+                    cx,
+                );
             },
         )
     }

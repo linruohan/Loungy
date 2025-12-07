@@ -1,19 +1,53 @@
-pub mod root;
-mod theme;
+/*
+ *
+ *  This source file is part of the Loungy open source project
+ *
+ *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
+ *  Licensed under MIT License
+ *
+ *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
+ *
+ */
 
-use bonsaidb::core::schema::Collection;
-use gpui::{App, Global};
+use crate::{
+    command,
+    components::{
+        form::{Input, InputKind, LForm},
+        list::{Accessory, Item, ItemBuilder, LListItem},
+        shared::{Icon, Img},
+    },
+    hotkey::HotkeyManager,
+    state::{
+        CommandTrait, LAction, LActionFn, Shortcut, StateModel, StateViewBuilder, StateViewContext,
+    },
+};
+use gpui::{AnyView, App, Global, Window};
+use log::error;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::{CommandTrait, LActionFn, Shortcut, shared::Icon};
+use self::root::list;
+
+#[cfg(feature = "bitwarden")]
+mod bitwarden;
+#[cfg(feature = "clipboard")]
+mod clipboard;
+#[cfg(feature = "matrix")]
+mod matrix;
+#[cfg(target_os = "macos")]
+mod menu;
+mod process;
+pub mod root;
+#[cfg(feature = "tailscale")]
+mod tailscale;
+mod theme;
 
 fn def() -> Arc<dyn LActionFn + Send + Sync + 'static> {
     Arc::new(|_, _| {})
 }
 
-#[derive(Clone, Serialize, Deserialize, Collection)]
-#[collection(name = "root_commands",primary_key = String)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct RootCommand {
     pub id: String,
     title: String,
@@ -33,7 +67,7 @@ impl RootCommand {
         icon: Icon,
         keywords: Vec<impl ToString>,
         shortcut: Option<Shortcut>,
-        action: impl LActionFn,
+        action: impl LActionFn + 'static,
     ) -> Self {
         Self {
             id: id.to_string(),
@@ -48,7 +82,7 @@ impl RootCommand {
 }
 
 pub trait RootCommandBuilder: CommandTrait {
-    fn build(&self, cx: &mut App) -> RootCommand;
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand;
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -57,16 +91,83 @@ pub struct RootCommands {
 }
 
 impl RootCommands {
-    // pub fn init(cx: &mut App) {
-    //     let this = RootCommands {
-    //         commands: HashMap::new(),
-    //     };
-    //     cx.set_global(this);
-    // }
-    // pub fn list(cx: &App) -> Vec<RootCommand> {
-    //     let root_commands = cx.global::<RootCommands>();
-    //     root_commands.commands.values().cloned().collect()
-    // }
+    pub fn init(window: &mut Window, cx: &mut App) {
+        let commands: Vec<Box<dyn RootCommandBuilder>> = vec![
+            Box::new(list::LoungyCommandBuilder),
+            #[cfg(target_os = "macos")]
+            Box::new(menu::list::MenuCommandBuilder),
+            Box::new(process::list::ProcessCommandBuilder),
+            Box::new(theme::list::ThemeCommandBuilder),
+            #[cfg(feature = "tailscale")]
+            Box::new(tailscale::list::TailscaleCommandBuilder),
+            #[cfg(feature = "bitwarden")]
+            Box::new(bitwarden::list::BitwardenCommandBuilder),
+            #[cfg(feature = "matrix")]
+            Box::new(matrix::list::MatrixCommandBuilder),
+            #[cfg(feature = "clipboard")]
+            Box::new(clipboard::list::ClipboardCommandBuilder),
+        ];
+        let mut map = HashMap::new();
+        for command in commands {
+            let id = command.command();
+            let mut command = command.build(window, cx);
+            command.id = id.clone();
+            map.insert(id, command);
+        }
+        cx.set_global(Self { commands: map });
+    }
+    pub fn list(window: &mut Window, cx: &mut App) -> Vec<Item> {
+        let commands = cx.global::<Self>().commands.clone();
+        let items: Vec<Item> = commands
+            .values()
+            .map(|command| {
+                let mut keywords = vec![command.title.clone(), command.subtitle.clone()];
+                keywords.append(&mut command.keywords.clone());
+                ItemBuilder::new(
+                    command.id.clone(),
+                    LListItem::new(
+                        Some(Img::default().icon(command.icon.clone())),
+                        command.title.clone(),
+                        Some(command.subtitle.clone()),
+                        command
+                            .shortcut
+                            .clone()
+                            .map(|shortcut| vec![Accessory::shortcut(shortcut)])
+                            .unwrap_or(vec![Accessory::new("Command", None)]),
+                    ),
+                )
+                .keywords(keywords)
+                .actions(vec![
+                    LAction::new_rc(
+                        Img::default().icon(command.icon.clone()),
+                        command.title.clone(),
+                        None,
+                        command.action.clone(),
+                        false,
+                    ),
+                    LAction::new(
+                        Img::default().icon(Icon::Keyboard),
+                        "Change Hotkey",
+                        None,
+                        {
+                            let id = command.id.clone();
+                            move |actions, cx| {
+                                let id = id.clone();
+                                StateModel::update(
+                                    |this, cx| this.push(HotkeyBuilder { id }, window, cx),
+                                    cx,
+                                );
+                            }
+                        },
+                        false,
+                    ),
+                ])
+                .weight(3)
+                .build()
+            })
+            .collect();
+        items
+    }
 }
 
 impl Global for RootCommands {}
@@ -74,4 +175,49 @@ impl Global for RootCommands {}
 #[derive(Clone)]
 pub struct HotkeyBuilder {
     id: String,
+}
+command!(HotkeyBuilder);
+impl StateViewBuilder for HotkeyBuilder {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
+        let id = self.id.clone();
+        let value = HotkeyManager::get(&id).map(Shortcut::new);
+        LForm::new(
+            vec![Input::new(
+                "hotkey",
+                "Hotkey",
+                InputKind::Shortcut {
+                    tmp: value.clone(),
+                    value,
+                },
+                cx,
+            )],
+            move |values, actions, cx| {
+                let shortcut = values["hotkey"].value::<Option<Shortcut>>();
+                if let Some(shortcut) = shortcut {
+                    if let Err(err) = HotkeyManager::set(&id, shortcut.get(), cx) {
+                        error!("Failed to set hotkey: {}", err);
+                        actions.toast.error("Failed to set hotkey", cx);
+                    } else {
+                        actions.toast.success("Hotkey set", cx);
+                    }
+                } else if let Err(err) = HotkeyManager::unset(&id, cx) {
+                    error!("Failed to unset hotkey: {}", err);
+                    actions.toast.error("Failed to unset hotkey", cx);
+                } else {
+                    actions.toast.success("Hotkey unset", cx);
+                }
+                // let shortcut = values["hotkey"].value::<Option<Shortcut>>().unwrap();
+                // if let Some(shortcut) = shortcut {
+                //     let mut model = cx.global::<StateModel>();
+                //     model.hotkey = shortcut;
+                //     model.save(cx);
+                // }
+                //
+            },
+            context,
+            window,
+            cx,
+        )
+        .into()
+    }
 }

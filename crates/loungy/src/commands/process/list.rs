@@ -9,23 +9,22 @@
  *
  */
 
-use gpui::{AnyView, App};
-use regex::Regex;
-use std::{
-    cmp::Reverse, collections::HashMap, fs, path::PathBuf, process::Command, time::Duration,
-};
-
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder},
     components::{
-        list::{Accessory, ItemBuilder, ListBuilder, ListItem},
+        list::{Accessory, ItemBuilder, LListItem, ListBuilder},
         shared::{Icon, Img, ImgMask, ImgSize},
     },
     paths::paths,
-    platform::{get_application_data, AppData},
-    state::{Action, CommandTrait, StateModel, StateViewBuilder, StateViewContext},
+    platform::{AppData, get_application_data},
+    state::{CommandTrait, LAction, StateModel, StateViewBuilder, StateViewContext},
     theme::Theme,
+};
+use gpui::{AnyView, App, Window};
+use regex::Regex;
+use std::{
+    cmp::Reverse, collections::HashMap, fs, path::PathBuf, process::Command, time::Duration,
 };
 
 #[derive(Clone)]
@@ -74,7 +73,7 @@ pub struct ProcessListBuilder;
 command!(ProcessListBuilder);
 
 impl StateViewBuilder for ProcessListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search for running processes...", cx);
@@ -154,7 +153,7 @@ impl StateViewBuilder for ProcessListBuilder {
                                     } else {
                                         (theme.lavender, theme.subtext0)
                                     };
-                                    ListItem::new(
+                                    LListItem::new(
                                         Some(data.icon),
                                         data.name.clone(),
                                         None,
@@ -183,7 +182,7 @@ impl StateViewBuilder for ProcessListBuilder {
                                     )
                                 })
                                 .keywords(vec![data.name.clone()])
-                                .actions(vec![Action::new(
+                                .actions(vec![LAction::new(
                                     Img::default().icon(Icon::Skull),
                                     "Kill Process",
                                     None,
@@ -211,6 +210,7 @@ impl StateViewBuilder for ProcessListBuilder {
                     ))
                 },
                 context,
+                window,
                 cx,
             )
             .into()
@@ -221,7 +221,7 @@ pub struct ProcessCommandBuilder;
 command!(ProcessCommandBuilder);
 
 impl RootCommandBuilder for ProcessCommandBuilder {
-    fn build(&self, _cx: &mut App) -> RootCommand {
+    fn build(&self, window: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "task_manager",
             "Search Processes",
@@ -229,8 +229,8 @@ impl RootCommandBuilder for ProcessCommandBuilder {
             Icon::Cpu,
             vec!["Kill", "Memory", "CPU"],
             None,
-            |_, cx| {
-                StateModel::update(|this, cx| this.push(ProcessListBuilder, cx), cx);
+            |actions, cx| {
+                StateModel::update(|this, cx| this.push(ProcessListBuilder, window, cx), cx);
             },
         )
     }

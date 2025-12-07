@@ -9,12 +9,6 @@
  *
  */
 
-use gpui::{AnyView, App, ClipboardItem};
-use jiff::Timestamp;
-use nucleo::Status;
-use serde::Deserialize;
-use std::{collections::HashMap, process::Command, time::Duration};
-
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder},
@@ -27,6 +21,12 @@ use crate::{
     state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
     theme::Theme,
 };
+use gpui::{AnyView, App, ClipboardItem, Window};
+use gpui_component::list::ListItem;
+use jiff::Timestamp;
+use nucleo::Status;
+use serde::Deserialize;
+use std::{collections::HashMap, process::Command, time::Duration};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "PascalCase")]
@@ -60,7 +60,7 @@ pub struct TailscaleListBuilder;
 
 command!(TailscaleListBuilder);
 impl StateViewBuilder for TailscaleListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search for peers...", cx);
         context.actions.set_dropdown(
             "online",
@@ -186,7 +186,7 @@ pub struct TailscaleCommandBuilder;
 command!(TailscaleCommandBuilder);
 
 impl RootCommandBuilder for TailscaleCommandBuilder {
-    fn build(&self, _cx: &mut App) -> RootCommand {
+    fn build(&self, window: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "tailscale",
             "Search Peers",
@@ -195,7 +195,7 @@ impl RootCommandBuilder for TailscaleCommandBuilder {
             vec!["VPN"],
             None,
             |_, cx| {
-                StateModel::update(|this, cx| this.push(TailscaleListBuilder, cx), cx);
+                StateModel::update(|this, cx| this.push(TailscaleListBuilder, window, cx), cx);
             },
         )
     }
