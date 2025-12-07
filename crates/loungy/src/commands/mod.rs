@@ -1,12 +1,10 @@
 pub mod root;
 mod theme;
-use std::{collections::HashMap, sync::Arc};
 
 use bonsaidb::core::schema::Collection;
-use gpui::{
-    App, Global,
-    private::serde::{Deserialize, Serialize},
-};
+use gpui::{App, Global};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{CommandTrait, LActionFn, Shortcut, shared::Icon};
 
@@ -15,8 +13,7 @@ fn def() -> Arc<dyn LActionFn + Send + Sync + 'static> {
 }
 
 #[derive(Clone, Serialize, Deserialize, Collection)]
-#[collection(name = "root_commands", primary_key = String, views = [])]
-#[collection(serialization = None)]
+#[collection(name = "root_commands",primary_key = String)]
 pub struct RootCommand {
     pub id: String,
     title: String,
@@ -59,7 +56,18 @@ pub struct RootCommands {
     pub commands: HashMap<String, RootCommand>,
 }
 
-impl RootCommands {}
+impl RootCommands {
+    // pub fn init(cx: &mut App) {
+    //     let this = RootCommands {
+    //         commands: HashMap::new(),
+    //     };
+    //     cx.set_global(this);
+    // }
+    // pub fn list(cx: &App) -> Vec<RootCommand> {
+    //     let root_commands = cx.global::<RootCommands>();
+    //     root_commands.commands.values().cloned().collect()
+    // }
+}
 
 impl Global for RootCommands {}
 

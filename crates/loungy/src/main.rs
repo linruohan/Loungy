@@ -14,6 +14,7 @@ use loungy_assets::Assets;
 #[tokio::main]
 async fn main() {
     env_logger::init();
+
     let app = Application::new().with_assets(Assets);
     if let Ok(listener) = setup_socket().await {
         run_app(listener, app);

@@ -1,4 +1,7 @@
-use crate::{ipc::server::PlatformListener, theme::Theme, window::LWindow, workspace::Workspace};
+use crate::{
+    RootCommands, ipc::server::PlatformListener, theme::Theme, window::LWindow,
+    workspace::Workspace,
+};
 use gpui::{
     App, Bounds, Pixels, Point, Size, WindowBackgroundAppearance, WindowBounds, WindowKind,
     WindowOptions, px,
@@ -8,6 +11,7 @@ use gpui_component::TitleBar;
 pub fn run_app(listener: PlatformListener, app: gpui::Application) {
     app.run(move |cx: &mut App| {
         Theme::init(cx);
+        RootCommands::init(cx);
         // TODO: This still only works for a single display
         let bounds = cx.displays().first().map(|d| d.bounds()).unwrap_or(Bounds {
             origin: Point::new(Pixels::from(0.0), Pixels::from(0.0)),
