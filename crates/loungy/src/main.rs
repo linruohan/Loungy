@@ -4,7 +4,7 @@
 )]
 use gpui::{App, AppContext, Application, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
 use loungy::{
-    RootCommands, Theme, Workspace,
+    Theme, Workspace,
     client::client_connect,
     run_app,
     server::{PlatformListener, setup_socket, start_server},
