@@ -7,7 +7,6 @@ use gpui::{
     App, Global,
     private::serde::{Deserialize, Serialize},
 };
-pub use theme::*;
 
 use crate::{CommandTrait, LActionFn, Shortcut, shared::Icon};
 

@@ -48,9 +48,7 @@ notify.workspace=true
 notify-debouncer-full.workspace=true
 nucleo.workspace=true
 numbat.workspace=true
-numbat-exchange-rates.workspace=true
 parking_lot.workspace=true
-quick-xml.workspace=true
 rand.workspace=true
 regex.workspace=true
 reqwest.workspace=true
@@ -67,7 +65,7 @@ whoami.workspace=true
 workspace = true
 
 [package.metadata.cargo-machete]
-ignored = ["embed-resource", "winresource", "naga"]
+ignored = ["embed-resource", "winresource", "naga","matrix-sdk-crypto"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
 swift-rs = "1.0.7"
