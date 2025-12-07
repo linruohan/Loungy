@@ -16,7 +16,7 @@ loungy-assets.workspace=true
 gpui.workspace=true
 gpui-macros.workspace=true
 gpui-component.workspace=true
-rust-embed = { version = "8.7.2", features = ["interpolate-folder-path"] }
+rust-embed = { version = "8.9.0", features = ["interpolate-folder-path"] }
 arboard={version="3.6.1",optional=true}
 matrix-sdk-crypto = { version = "0.7.2", optional=true }
 matrix-sdk = { version = "0.7.1", default-features = false, optional=true, features = [
@@ -43,6 +43,7 @@ global-hotkey.workspace=true
 image.workspace=true
 jiff.workspace=true
 log.workspace=true
+tokio.workspace = true
 notify.workspace=true
 notify-debouncer-full.workspace=true
 nucleo.workspace=true

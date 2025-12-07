@@ -16,7 +16,6 @@ use std::borrow::Cow;
 #[derive(RustEmbed)]
 #[folder = "assets"]
 #[include = "icons/**/*.svg"]
-#[include = "planify-icons/**/*.svg"]
 #[include = "fonts/**/*.ttf"]
 #[exclude = "*.DS_Store"]
 pub struct Assets;

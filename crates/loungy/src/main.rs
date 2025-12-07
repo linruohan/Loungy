@@ -3,13 +3,13 @@
     windows_subsystem = "windows"
 )]
 use gpui::{App, AppContext, Application, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
-use loungy_assets::Assets;
-use mytool::{
+use loungy::{
     RootCommands, Theme, Workspace,
     client::client_connect,
     run_app,
     server::{PlatformListener, setup_socket, start_server},
 };
+use loungy_assets::Assets;
 
 #[tokio::main]
 async fn main() {

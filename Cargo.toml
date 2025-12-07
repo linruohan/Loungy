@@ -27,7 +27,7 @@ numbat = "1.16.0"
 numbat-exchange-rates = "0.5.0"
 whoami = { version = "1.6.1", default-features = false }
 anyhow = "1.0.100"
-winresource = "0.1.0"
+winresource = "0.1.28"
 rust-embed = "8.9.0"
 regex = "1.12.2"
 bonsaidb = { version = "0.5.0", features = ["local-full"] }

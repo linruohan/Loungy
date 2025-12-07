@@ -1,9 +1,9 @@
-use gpui::{
-    App, Bounds, Pixels, Point, Size, WindowBackgroundAppearance, WindowBounds,
-    WindowKind, WindowOptions, px,
-};
-
 use crate::{ipc::server::PlatformListener, theme::Theme, window::LWindow, workspace::Workspace};
+use gpui::{
+    App, Bounds, Pixels, Point, Size, WindowBackgroundAppearance, WindowBounds, WindowKind,
+    WindowOptions, px,
+};
+use gpui_component::TitleBar;
 
 pub fn run_app(listener: PlatformListener, app: gpui::Application) {
     app.run(move |cx: &mut App| {
