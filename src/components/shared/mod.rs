@@ -1,14 +1,3 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
 use std::{
     cell::OnceCell,
     collections::HashMap,
@@ -18,22 +7,19 @@ use std::{
 };
 
 use anyhow::anyhow;
-use futures::future::Shared;
-use futures::FutureExt;
+use futures::{FutureExt, future::Shared};
 use gpui::{
-    div, img, percentage, svg, Animation, AnimationExt, App, Context, Entity, Hsla, ImageSource,
-    IntoElement, ParentElement, Render, RenderOnce, Resource, SharedUri, Styled, StyledImage,
-    Transformation, Window,
+    Animation, AnimationExt, App, AppContext, Context, Entity, Hsla, ImageSource, IntoElement,
+    ParentElement, Render, RenderOnce, Resource, SharedUri, Styled, StyledImage, Transformation,
+    Window, div, img, percentage, svg,
 };
+pub use icon::Icon;
 use log::debug;
 use parking_lot::Mutex;
 use reqwest::StatusCode;
 use scraper::{Html, Selector};
 use smol::{spawn, unblock};
-use tokio::task::spawn_blocking;
 use url::Url;
-
-pub use icon::Icon;
 
 use crate::theme::Theme;
 
@@ -95,12 +81,7 @@ pub struct Img {
 
 impl Default for Img {
     fn default() -> Self {
-        Self {
-            src: ImgSource::None,
-            mask: ImgMask::None,
-            size: ImgSize::MD,
-            fit: ObjectFit::Cover,
-        }
+        Self { src: ImgSource::None, mask: ImgMask::None, size: ImgSize::MD, fit: ObjectFit::Cover }
     }
 }
 
@@ -110,46 +91,50 @@ impl Img {
         self.mask = ImgMask::Rounded;
         self
     }
+
     pub fn icon_color(mut self, color: Hsla) -> Self {
         let icon = match self.src {
             ImgSource::Icon { icon, color: _ } => icon,
             _ => {
                 return self;
-            }
+            },
         };
-        self.src = ImgSource::Icon {
-            icon,
-            color: Some(color),
-        };
+        self.src = ImgSource::Icon { icon, color: Some(color) };
         self
     }
+
     pub fn object_fit(mut self, fit: ObjectFit) -> Self {
         self.fit = fit;
         self
     }
+
     pub fn dot(mut self, color: Hsla) -> Self {
         self.src = ImgSource::Dot(color);
         self
     }
+
     pub fn favicon(mut self, url: impl ToString, fallback: Icon, cx: &mut App) -> Self {
         let favicon = Favicon::new(&self, url, fallback, cx);
         self.src = ImgSource::Favicon(favicon);
         self
     }
+
     pub fn file(mut self, src: PathBuf) -> Self {
         self.src = ImgSource::Base(ImageSource::Resource(Resource::Path(Arc::from(src))));
         self
     }
+
     pub fn url(mut self, src: impl ToString) -> Self {
-        self.src = ImgSource::Base(ImageSource::Resource(Resource::Uri(SharedUri::from(
-            src.to_string(),
-        ))));
+        self.src =
+            ImgSource::Base(ImageSource::Resource(Resource::Uri(SharedUri::from(src.to_string()))));
         self
     }
+
     pub fn mask(mut self, mask: ImgMask) -> Self {
         self.mask = mask;
         self
     }
+
     pub fn size(mut self, size: ImgSize) -> Self {
         self.size = size;
         self
@@ -162,11 +147,7 @@ impl RenderOnce for Img {
             return favicon.clone().into_any_element();
         }
         let theme = cx.global::<Theme>();
-        let el = div()
-            .flex()
-            .items_center()
-            .justify_center()
-            .overflow_hidden();
+        let el = div().flex().items_center().justify_center().overflow_hidden();
         let el = match self.mask {
             ImgMask::Circle => el.rounded_full().bg(theme.surface0),
             ImgMask::Rounded => el.rounded_md().bg(theme.surface0),
@@ -181,15 +162,13 @@ impl RenderOnce for Img {
         let img = match self.src {
             ImgSource::Icon { icon, color } => {
                 match self.mask {
-                    ImgMask::None => {}
+                    ImgMask::None => {},
                     _ => {
                         el = el.p_1();
-                    }
+                    },
                 }
-                let svg = svg()
-                    .path(icon.path())
-                    .text_color(color.unwrap_or(theme.text))
-                    .size_full();
+                let svg =
+                    svg().path(icon.path()).text_color(color.unwrap_or(theme.text)).size_full();
                 if icon == Icon::Loader2 {
                     svg.with_animation(
                         "rotate-loader",
@@ -202,22 +181,22 @@ impl RenderOnce for Img {
                 } else {
                     svg.into_any_element()
                 }
-            }
+            },
             ImgSource::Base(src) => {
                 let img = img(src).object_fit(self.fit.into()).size_full();
                 let img = match self.mask {
                     ImgMask::Circle => {
                         el = el.p_0p5();
                         img.rounded_full().overflow_hidden().bg(theme.surface0)
-                    }
+                    },
                     ImgMask::Rounded => {
                         el = el.p_0p5();
                         img.rounded_md().overflow_hidden().bg(theme.surface0)
-                    }
+                    },
                     ImgMask::None => img,
                 };
                 img.into_any_element()
-            }
+            },
             ImgSource::Dot(color) => div().rounded_full().bg(color).size_1_2().into_any_element(),
             ImgSource::Favicon(_) => unreachable!(),
             ImgSource::None => div().into_any_element(),
@@ -262,9 +241,8 @@ impl Favicon {
                 ))?);
             }
         };
-        let client = reqwest::ClientBuilder::new()
-            .user_agent("http_client (loungy.app)")
-            .build()?;
+        let client =
+            reqwest::ClientBuilder::new().user_agent("http_client (loungy.app)").build()?;
         for target in targets {
             let Ok(response) = client.get(target.clone()).send().await else {
                 continue;
@@ -276,18 +254,20 @@ impl Favicon {
 
             let mut hrefs: Vec<String> = unblock(move || {
                 let document = Html::parse_document(&html);
-                let selector = Selector::parse("link[rel~='icon'], link[rel~='shortcut icon'], link[rel~='alternate icon'], link[rel~='apple-touch-icon'], link[rel~='apple-touch-icon-precomposed']").unwrap();
+                let selector = Selector::parse(
+                    "link[rel~='icon'], link[rel~='shortcut icon'], link[rel~='alternate icon'], \
+                     link[rel~='apple-touch-icon'], link[rel~='apple-touch-icon-precomposed']",
+                )
+                .unwrap();
 
                 document
                     .select(&selector)
                     .filter_map(|element| element.value().attr("href").map(|href| href.to_string()))
                     .collect()
-            }).await;
+            })
+            .await;
 
-            hrefs.append(&mut vec![
-                "/favicon.svg".to_string(),
-                "/favicon.ico".to_string(),
-            ]);
+            hrefs.append(&mut vec!["/favicon.svg".to_string(), "/favicon.ico".to_string()]);
 
             for href in hrefs {
                 let absolute = Url::parse(&href).unwrap_or(url.join(&href)?);
@@ -315,30 +295,26 @@ impl Favicon {
 
         Err(anyhow!("No favicon found for {}", url))
     }
+
     pub fn new(img: &Img, url: impl ToString, fallback: Icon, cx: &mut App) -> Entity<Self> {
         let url = 'url: {
             let Ok(url) = Url::parse(&url.to_string()) else {
-                break 'url "";
+                break 'url String::new();
             };
             if url.cannot_be_a_base() || !url.scheme().starts_with("http") {
-                break 'url "";
+                break 'url String::new();
             }
             let Some(host) = url.host_str() else {
-                break 'url "";
+                break 'url String::new();
             };
             let Ok(url) = Url::parse(&format!("{}://{}", url.scheme(), host)) else {
-                break 'url "";
+                break 'url String::new();
             };
-            url.to_string().as_str()
+            url.to_string()
         }
         .to_string();
 
-        cx.new_view(|_cx| Self {
-            img: img.clone(),
-            fallback,
-            url,
-            task: OnceCell::new(),
-        })
+        cx.new(|_cx| Self { img: img.clone(), fallback, url, task: OnceCell::new() })
     }
 }
 

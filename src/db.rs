@@ -1,14 +1,3 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
 use std::sync::OnceLock;
 
 use bonsaidb::{
@@ -19,12 +8,12 @@ use bonsaidb::{
         schema::Collection,
     },
     local::{
+        Database, Storage,
         config::{Builder, StorageConfiguration},
         vault::LocalVaultKeyStorage,
-        Database, Storage,
     },
 };
-use serde::{de, Serialize};
+use serde::{Serialize, de};
 
 use crate::paths::paths;
 
@@ -48,32 +37,25 @@ impl Db {
             .vault_key_storage(LocalVaultKeyStorage::new(keys).expect("Failed to create vault"))
             .default_encryption_key(KeyId::Master);
         let storage = Storage::open(config).expect("Failed to open storage");
-        storage
-            .register_schema::<()>()
-            .expect("Failed to register schema");
-        let inner = storage
-            .create_database::<()>("kv", true)
-            .expect("Failed to open database");
+        storage.register_schema::<()>().expect("Failed to register schema");
+        let inner = storage.create_database::<()>("kv", true).expect("Failed to open database");
 
         Self { inner, storage }
     }
+
     pub fn init_collection<C: Collection + 'static>() -> Database {
         let storage = &db().storage;
-        storage
-            .register_schema::<C>()
-            .expect("Failed to register schema");
+        storage.register_schema::<C>().expect("Failed to register schema");
 
         storage
             .create_database::<C>(&C::collection_name().to_string(), true)
             .expect("Failed to open database")
     }
+
     pub fn get<T: de::DeserializeOwned>(&self, id: &str) -> Option<T> {
-        if let Ok(value) = self.inner.get_key(id).into() {
-            value
-        } else {
-            None
-        }
+        if let Ok(value) = self.inner.get_key(id).into() { value } else { None }
     }
+
     pub fn set<T: Serialize + Send + Sync>(
         &self,
         id: &str,

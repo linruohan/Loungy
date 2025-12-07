@@ -1,15 +1,4 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
-use std::{env, path::PathBuf, sync::OnceLock};
+use std::{collections::HashSet, path::PathBuf, sync::OnceLock};
 
 pub struct Paths {
     pub path_env: String,
@@ -45,7 +34,7 @@ impl Paths {
             ),
             #[cfg(target_os = "windows")]
             path_env: format!(
-                "C:\\Windows\\System32;C:\\Windows;C:\\Windows\\System32\\Wbem;{}\\.cargo\\bin;{}\\.local\\bin",
+                "C:\\Windows\\System32;C:\\Windows;{}\\.cargo\\bin;{}\\.local\\bin",
                 user_dir_str, user_dir_str
             ),
             #[cfg(target_os = "macos")]
@@ -56,19 +45,14 @@ impl Paths {
             cache: user_dir.clone().join(".cache").join(NAME),
             config: user_dir.clone().join(".config").join(NAME),
             #[cfg(target_os = "macos")]
-            data: user_dir
-                .clone()
-                .join("Library/Application Support")
-                .join(NAME),
+            data: user_dir.clone().join("Library/Application Support").join(NAME),
             #[cfg(target_os = "linux")]
             data: user_dir.clone().join(".local/share").join(NAME),
             #[cfg(target_os = "windows")]
-            data: user_dir
-                .clone()
-                .join("Library/Application Support")
-                .join(NAME),
+            data: user_dir.clone().join("Library/Application Support").join(NAME),
         }
     }
+
     // 创建目录（如果不存在）
     pub fn create_dirs(&self) -> std::io::Result<()> {
         let dirs = [&self.cache, &self.config, &self.data];
@@ -96,7 +80,7 @@ fn get_user_home_dir(username: &str) -> PathBuf {
     #[cfg(target_os = "macos")]
     {
         // macOS: /Users/用户名
-        if let Ok(home) = env::var("HOME") {
+        if let Ok(home) = std::env::var("HOME") {
             PathBuf::from(home)
         } else {
             PathBuf::from("/Users").join(username)
@@ -106,7 +90,7 @@ fn get_user_home_dir(username: &str) -> PathBuf {
     #[cfg(target_os = "linux")]
     {
         // Linux: /home/用户名
-        if let Ok(home) = env::var("HOME") {
+        if let Ok(home) = std::env::var("HOME") {
             PathBuf::from(home)
         } else {
             PathBuf::from("/home").join(username)
@@ -127,7 +111,7 @@ fn get_user_home_dir(username: &str) -> PathBuf {
     )))]
     {
         // 其他 Unix-like 系统
-        if let Ok(home) = env::var("HOME") {
+        if let Ok(home) = std::env::var("HOME") {
             PathBuf::from(home)
         } else {
             PathBuf::from("/home").join(username)
@@ -206,6 +190,14 @@ fn get_standard_paths(
 
 fn build_path_env(username: &str, user_dir: &PathBuf) -> String {
     let mut paths = Vec::new();
+    // 使用 HashSet 去重，同时维护顺序
+    let mut seen = HashSet::new();
+    // 辅助函数：添加路径（去重）
+    let mut add_path = |path: String| {
+        if seen.insert(path.clone()) {
+            paths.push(path);
+        }
+    };
 
     // 添加系统路径
     #[cfg(target_os = "macos")]
@@ -239,22 +231,23 @@ fn build_path_env(username: &str, user_dir: &PathBuf) -> String {
 
     #[cfg(target_os = "windows")]
     {
-        let user_path = user_dir.to_string_lossy();
-        paths.extend([
-            "C:\\Windows\\System32",
-            "C:\\Windows",
-            "C:\\Windows\\System32\\Wbem",
-        ]);
+        // 1. 添加系统路径
+        for path in [r"C:\Windows\System32", r"C:\Windows", r"C:\Windows\System32\Wbem"] {
+            add_path(path.to_string());
+        }
 
-        // 保留现有 PATH
+        // 2. 添加用户目录
+        add_path(user_dir.to_string_lossy().into_owned());
+
+        // 3. 添加现有环境变量路径
         if let Ok(existing_path) = std::env::var("PATH") {
-            // 去重和清理现有路径
-            let existing_paths: Vec<String> = existing_path
-                .split(';')
-                .filter(|p| !p.trim().is_empty())
-                .map(|s| s.trim().to_string())
-                .collect();
-            paths.extend_from_slice(&existing_paths);
+            // 创建临时的 String 存储，确保生命周期
+            for path_part in existing_path.split(";") {
+                let trimmed = path_part.trim();
+                if !trimmed.is_empty() {
+                    add_path(trimmed.to_string());
+                }
+            }
         }
     }
 

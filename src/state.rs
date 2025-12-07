@@ -1,37 +1,28 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
-use crate::{
-    commands::root::list::RootListBuilder,
-    components::{
-        list::{Accessory, ItemBuilder, List, ListBuilder, ListItem},
-        shared::{Icon, Img, ImgMask, ImgSize},
-    },
-    query::{TextEvent, TextInput, TextInputWeak},
-    theme::{self, Theme},
-    window::{LWindow, WindowStyle},
+use std::{
+    ops::DerefMut,
+    sync::Arc,
+    time::{Duration, Instant},
 };
+
 use gpui::{
-    bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement, AnyEntity,
-    AnyView, App, AsyncWindowContext, BorrowAppContext, Bounds, Context, Div, Entity, FontWeight,
-    Global, Hsla, IntoElement, Keystroke, Modifiers, ParentElement, Pixels, Point, Render,
-    RenderOnce, SharedString, Size, Styled, VisualContext, WeakEntity, Window,
+    bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement,
+    AnyEntity, AnyView, App, AppContext, AsyncWindowContext, BorrowAppContext, Bounds, Context, Div,
+    Entity, FontWeight, Global, Hsla, IntoElement, Keystroke, Modifiers, ParentElement, Pixels,
+    Point, Render, RenderOnce, SharedString, Size, Styled, WeakEntity, Window,
 };
 use log::debug;
 use parking_lot::{Mutex, MutexGuard};
 use serde::Deserialize;
-use std::{
-    ops::DerefMut,
-    rc::Rc,
-    time::{Duration, Instant},
+
+use crate::{
+    commands::root::list::RootListBuilder,
+    components::{
+        list::{Accessory, ItemBuilder, LList, LListItem, ListBuilder},
+        shared::{Icon, Img, ImgMask, ImgSize},
+    },
+    query::{TextEvent, TextInput, TextInputWeak},
+    theme::{self, Theme},
+    window::{LWindow, LWindowStyle},
 };
 
 pub struct LazyMutex<T> {
@@ -41,10 +32,7 @@ pub struct LazyMutex<T> {
 
 impl<T> LazyMutex<T> {
     pub const fn new(init: fn() -> T) -> Self {
-        Self {
-            inner: Mutex::new(None),
-            init,
-        }
+        Self { inner: Mutex::new(None), init }
     }
 
     pub fn lock(&self) -> impl DerefMut<Target = T> + '_ {
@@ -54,27 +42,15 @@ impl<T> LazyMutex<T> {
 
 #[derive(Clone, PartialEq)]
 pub enum ToastState {
-    Success {
-        message: SharedString,
-        fade_in: Instant,
-        fade_out: Option<Instant>,
-    },
-    Error {
-        message: SharedString,
-        fade_in: Instant,
-        fade_out: Option<Instant>,
-    },
-    Loading {
-        message: SharedString,
-        fade_in: Instant,
-        fade_out: Option<Instant>,
-    },
+    Success { message: SharedString, fade_in: Instant, fade_out: Option<Instant> },
+    Error { message: SharedString, fade_in: Instant, fade_out: Option<Instant> },
+    Loading { message: SharedString, fade_in: Instant, fade_out: Option<Instant> },
     Idle,
 }
 
 impl ToastState {
     fn dot(color: Hsla) -> AnyElement {
-        let size = Pixels(6.0);
+        let size = Pixels::from(6.0);
         div()
             .size_6()
             .flex()
@@ -89,36 +65,27 @@ impl ToastState {
                     .rounded_full()
                     .with_animation(
                         "ping",
-                        Animation::new(Duration::from_secs(2))
-                            .with_easing(ease_in_out)
-                            .repeat(),
+                        Animation::new(Duration::from_secs(2)).with_easing(ease_in_out).repeat(),
                         {
                             move |div, delta| {
                                 let delta = (delta - 0.75) * 4.0;
                                 let mut color = color;
                                 color.a = 1.0 - delta;
-                                let size = Pixels(6.0 * delta * 2.0 + 6.0);
+                                let size = Pixels::from(size.abs() * delta * 2.0 + size.abs());
                                 div.bg(color).size(size)
                             }
                         },
                     ),
             )
-            .child(
-                div()
-                    .size(size)
-                    .absolute()
-                    .inset_0()
-                    .m_auto()
-                    .bg(color)
-                    .rounded_full(),
-            )
+            .child(div().size(size).absolute().inset_0().m_auto().bg(color).rounded_full())
             .into_any_element()
     }
+
     pub fn timeout(&mut self, duration: Duration, cx: &mut Context<Self>) {
-        cx.spawn(move |view, mut cx| async move {
+        cx.spawn(async move |view, cx| {
             cx.background_executor().timer(duration).await;
             // cx.background_executor().timer(duration).await;
-            let _ = view.update(&mut cx, |this, cx| {
+            let _ = view.update(cx, |this, cx| {
                 *this = ToastState::Idle;
                 cx.notify();
             });
@@ -131,33 +98,13 @@ impl Render for ToastState {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         if let Some((el, bg, message, fade_in, fade_out)) = match self {
-            ToastState::Success {
-                message,
-                fade_in,
-                fade_out,
-            } => Some((
-                ToastState::dot(theme.green),
-                theme.green,
-                message,
-                fade_in,
-                fade_out,
-            )),
-            ToastState::Error {
-                message,
-                fade_in,
-                fade_out,
-            } => Some((
-                ToastState::dot(theme.red),
-                theme.red,
-                message,
-                fade_in,
-                fade_out,
-            )),
-            ToastState::Loading {
-                message,
-                fade_in,
-                fade_out,
-            } => Some((
+            ToastState::Success { message, fade_in, fade_out } => {
+                Some((ToastState::dot(theme.green), theme.green, message, fade_in, fade_out))
+            },
+            ToastState::Error { message, fade_in, fade_out } => {
+                Some((ToastState::dot(theme.red), theme.red, message, fade_in, fade_out))
+            },
+            ToastState::Loading { message, fade_in, fade_out } => Some((
                 Img::default()
                     .icon(Icon::Loader2)
                     .mask(ImgMask::None)
@@ -230,10 +177,11 @@ pub struct Toast {
 
 impl Toast {
     pub fn init(cx: &mut App) -> Self {
-        let state = cx.new_view(|_| ToastState::Idle);
+        let state = cx.new(|_| ToastState::Idle);
         Self { state }
     }
-    pub fn loading<C: VisualContext>(&mut self, message: impl ToString, cx: &mut C) {
+
+    pub fn loading(&mut self, message: impl ToString, cx: &mut App) {
         self.state.update(cx, |this, cx| {
             *this = ToastState::Loading {
                 message: message.to_string().into(),
@@ -243,7 +191,8 @@ impl Toast {
             cx.notify();
         });
     }
-    pub fn success<C: VisualContext>(&mut self, message: impl ToString, cx: &mut C) {
+
+    pub fn success(&mut self, message: impl ToString, cx: &mut App) {
         self.state.update(cx, |this, cx| {
             *this = ToastState::Success {
                 message: message.to_string().into(),
@@ -253,7 +202,8 @@ impl Toast {
             cx.notify();
         });
     }
-    pub fn error<C: VisualContext>(&mut self, message: impl ToString, cx: &mut C) {
+
+    pub fn error(&mut self, message: impl ToString, cx: &mut App) {
         self.state.update(cx, |this, cx| {
             *this = ToastState::Error {
                 message: message.to_string().into(),
@@ -263,39 +213,33 @@ impl Toast {
             cx.notify();
         });
     }
-    /*
-       TODO: This works in theory, but cx.hide() will hide the entire app so the toast won't show.
-       I experimented with instead removing the main window with cx.remove_window() and restoring it on hotkey press, but then we lose all state.
-       So right now I don't have a good solution. I am leaving this here for future reference investigation.
-    */
+
+    // TODO: This works in theory, but cx.hide() will hide the entire app so the toast won't show.
+    // I experimented with instead removing the main window with cx.remove_window() and restoring it
+    // on hotkey press, but then we lose all state. So right now I don't have a good solution. I
+    // am leaving this here for future reference investigation.
     pub fn floating(&mut self, message: impl ToString, icon: Option<Icon>, cx: &mut App) {
-        let bounds = cx.display().map(|d| d.bounds()).unwrap_or(Bounds {
+        let bounds = cx.displays().get(0).map(|d| d.bounds()).unwrap_or_else(|| Bounds {
             origin: Point::new(Pixels::from(0.0), Pixels::from(0.0)),
-            size: Size {
-                width: Pixels::from(1920.0),
-                height: Pixels::from(1080.0),
-            },
+            size: Size { width: Pixels::from(1920.0), height: Pixels::from(1080.0) },
         });
+
         LWindow::close(cx);
         let _ = cx.open_window(
-            WindowStyle::Toast {
-                width: message.to_string().len() as u32 * 12,
-                height: 50,
-            }
-            .options(bounds),
-            |cx| {
-                cx.spawn(cx, |mut cx| async move {
+            LWindowStyle::Toast { width: message.to_string().len() as u32 * 12, height: 50 }
+                .options(bounds),
+            |window, cx| {
+                let window_handle = window.window_handle();
+                cx.spawn(async move |cx| {
+                    // 等待2秒
                     cx.background_executor().timer(Duration::from_secs(2)).await;
-                    //cx.background_executor().timer(Duration::from_secs(2)).await;
-                    let _ = cx.update_window(cx.window_handle(), |_, cx| {
-                        cx.remove_window();
+                    // 使用窗口句柄来关闭窗口
+                    let _ = cx.update_window(window_handle, |_, window, _| {
+                        window.remove_window();
                     });
                 })
                 .detach();
-                cx.new_view(|_| PopupToast {
-                    message: message.to_string().into(),
-                    icon,
-                })
+                cx.new(|_| PopupToast { message: message.to_string().into(), icon })
             },
         );
     }
@@ -350,18 +294,23 @@ pub struct StateViewContext {
 }
 
 impl StateItem {
-    pub fn init(view: impl StateViewBuilder, workspace: bool, cx: &mut App) -> Self {
+    pub fn init(
+        view: impl StateViewBuilder,
+        workspace: bool,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Self {
         let (s, r) = crossbeam_channel::unbounded::<bool>();
-        let (actions_weak, actions) = ActionsModel::init(s, cx);
-        let query = TextInput::new(cx);
+        let (actions_weak, actions) = ActionsModel::init(s, window, cx);
+        let query = TextInput::new(window, cx);
 
         let actions_clone = actions_weak.clone();
         cx.subscribe(&query.view, move |_, event, cx| match event {
             TextEvent::Blur => {
                 // if !actions_clone.inner.read(cx).show {
-                //     Window::close(cx);
+                //     LWindow::close(cx);
                 // };
-            }
+            },
             TextEvent::KeyDown(ev) => {
                 let _ = actions_clone.inner.update(cx, |this, cx| {
                     if let Some(action) = this.check(&ev.keystroke, cx) {
@@ -375,7 +324,7 @@ impl StateItem {
                         && (Keystroke {
                             modifiers: Modifiers::default(),
                             key: "tab".to_string(),
-                            key_char: None,
+                        key_char: None,
                         })
                         .eq(&ev.keystroke)
                     {
@@ -386,11 +335,11 @@ impl StateItem {
                 if ev.keystroke.key.as_str() == "escape" {
                     LWindow::close(cx);
                 }
-            }
+            },
             TextEvent::Back => {
                 StateModel::update(|this, cx| this.pop(cx), cx);
-            }
-            _ => {}
+            },
+            _ => {},
         })
         .detach();
         let mut context = StateViewContext {
@@ -399,19 +348,13 @@ impl StateItem {
             update_receiver: r,
         };
         let id = view.command();
-        let view = view.build(&mut context, cx);
-        Self {
-            id: id.into(),
-            query,
-            view,
-            actions,
-            workspace,
-        }
+        let view = view.build(&mut context, window, cx);
+        Self { id: id.into(), query, view, actions, workspace }
     }
 }
 
 pub trait StateViewBuilder: CommandTrait + Clone {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView;
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView;
 }
 
 pub trait CommandTrait {
@@ -439,16 +382,15 @@ pub struct StateModel {
 }
 
 impl StateModel {
-    pub fn init(cx: &mut App) -> Self {
-        let this = Self {
-            inner: cx.new_model(|_| State { stack: vec![] }),
-        };
-        this.push(RootListBuilder {}, cx);
+    pub fn init(window: &mut Window, cx: &mut App) -> Self {
+        let this = Self { inner: cx.new(|_| State { stack: vec![] }) };
+        this.push(RootListBuilder {}, window, cx);
 
         cx.set_global(this.clone());
 
         this
     }
+
     pub fn update(f: impl FnOnce(&mut Self, &mut App), cx: &mut App) {
         if !cx.has_global::<Self>() {
             log::error!("StateModel not found");
@@ -458,11 +400,13 @@ impl StateModel {
             f(this, cx);
         });
     }
+
     pub fn update_async(f: impl FnOnce(&mut Self, &mut App), cx: &mut AsyncWindowContext) {
         let _ = cx.update_global::<Self, _>(|this, _, cx| {
             f(this, cx);
         });
     }
+
     pub fn pop(&self, cx: &mut App) {
         self.inner.update(cx, |model, cx| {
             if model.stack.len() > 1 {
@@ -471,8 +415,9 @@ impl StateModel {
             };
         });
     }
-    pub fn push(&self, view: impl StateViewBuilder, cx: &mut App) {
-        let item = StateItem::init(view, true, cx);
+
+    pub fn push(&self, view: impl StateViewBuilder, window: &mut Window, cx: &mut App) {
+        let item = StateItem::init(view, true, window, cx);
         self.inner.update(cx, |model, cx| {
             model.stack.push(item);
             cx.notify();
@@ -485,10 +430,12 @@ impl StateModel {
             cx.notify();
         });
     }
-    pub fn replace(&self, view: impl StateViewBuilder, cx: &mut App) {
+
+    pub fn replace(&self, view: impl StateViewBuilder, window: &mut Window, cx: &mut App) {
         self.pop(cx);
-        self.push(view, cx);
+        self.push(view, window, cx);
     }
+
     pub fn reset(&self, cx: &mut App) {
         self.inner
             .update(cx, |model, _| {
@@ -510,9 +457,7 @@ pub struct Shortcut {
 
 impl From<&Keystroke> for Shortcut {
     fn from(keystroke: &Keystroke) -> Self {
-        Self {
-            inner: keystroke.clone(),
-        }
+        Self { inner: keystroke.clone() }
     }
 }
 
@@ -526,6 +471,7 @@ impl Shortcut {
             },
         }
     }
+
     pub fn cmd(mut self) -> Self {
         #[cfg(target_os = "macos")]
         {
@@ -537,14 +483,17 @@ impl Shortcut {
         }
         self
     }
+
     pub fn shift(mut self) -> Self {
         self.inner.modifiers.shift = true;
         self
     }
+
     pub fn alt(mut self) -> Self {
         self.inner.modifiers.alt = true;
         self
     }
+
     pub fn ctrl(mut self) -> Self {
         #[cfg(target_os = "macos")]
         {
@@ -556,6 +505,7 @@ impl Shortcut {
         }
         self
     }
+
     pub fn get(&self) -> Keystroke {
         self.inner.clone()
     }
@@ -563,14 +513,7 @@ impl Shortcut {
 
 fn key_icon(el: Div, icon: Icon) -> Div {
     el.child(
-        div()
-            .child(
-                Img::default()
-                    .icon(icon)
-                    .size(ImgSize::SM)
-                    .mask(ImgMask::Rounded),
-            )
-            .ml_0p5(),
+        div().child(Img::default().icon(icon).size(ImgSize::SM).mask(ImgMask::Rounded)).ml_0p5(),
     )
 }
 
@@ -593,7 +536,7 @@ fn key_string(el: Div, theme: &Theme, string: impl ToString) -> Div {
 
 impl RenderOnce for Shortcut {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<Theme>();
         let mut el = div().flex().items_center();
         let shortcut = self.inner;
         if shortcut.modifiers.control {
@@ -611,83 +554,77 @@ impl RenderOnce for Shortcut {
         match shortcut.key.as_str() {
             "enter" => {
                 el = key_icon(el, Icon::CornerDownLeft);
-            }
+            },
             "backspace" => {
                 el = key_icon(el, Icon::Delete);
-            }
+            },
             "delete" => {
                 el = key_icon(el, Icon::Delete);
-            }
+            },
             "escape" => {
                 el = key_icon(el, Icon::ArrowUpRightFromSquare);
-            }
+            },
             "tab" => {
                 el = key_icon(el, Icon::ArrowRightToLine);
-            }
+            },
             "space" => {
                 el = key_icon(el, Icon::Space);
-            }
+            },
             "up" => {
                 el = key_icon(el, Icon::ArrowUp);
-            }
+            },
             "down" => {
                 el = key_icon(el, Icon::ArrowDown);
-            }
+            },
             "left" => {
                 el = key_icon(el, Icon::ArrowLeft);
-            }
+            },
             "right" => {
                 el = key_icon(el, Icon::ArrowRight);
-            }
+            },
             "comma" => {
                 el = key_string(el, theme, ",");
-            }
+            },
             "dot" => {
                 el = key_string(el, theme, ".");
-            }
+            },
             "questionmark" => {
                 el = key_string(el, theme, "?");
-            }
+            },
             "exclamationmark" => {
                 el = key_string(el, theme, "!");
-            }
+            },
             "slash" => {
                 el = key_string(el, theme, "/");
-            }
+            },
             "backslash" => {
                 el = key_string(el, theme, "\\");
-            }
+            },
             _ => {
-                el = key_string(
-                    el,
-                    theme,
-                    shortcut.key_char.unwrap_or(shortcut.key).to_uppercase(),
-                );
-            }
+                el =
+                    key_string(el, theme, shortcut.key_char.unwrap_or(shortcut.key).to_uppercase());
+            },
         }
         el
     }
 }
 
-pub trait ActionFn: Fn(&mut Actions, &mut App) + 'static {}
-impl<F> ActionFn for F where F: Fn(&mut Actions, &mut App) + 'static {}
+pub trait LActionFn: Fn(&mut Actions, &mut App) + Send + Sync + 'static {}
+impl<F> LActionFn for F where F: Fn(&mut Actions, &mut App) + Send + Sync + 'static {}
 
 #[derive(Clone, IntoElement)]
-pub struct Action {
+pub struct LAction {
     pub label: SharedString,
     pub shortcut: Option<Shortcut>,
     pub image: Img,
-    pub action: Rc<dyn ActionFn>,
+    pub action: Arc<dyn LActionFn>,
     pub hide: bool,
 }
 
-impl RenderOnce for Action {
+impl RenderOnce for LAction {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
-        let shortcut = if let Some(shortcut) = self.shortcut {
-            div().child(shortcut)
-        } else {
-            div()
-        };
+        let shortcut =
+            if let Some(shortcut) = self.shortcut { div().child(shortcut) } else { div() };
         div()
             .ml_auto()
             .child(div().child(self.label).mr_2())
@@ -698,36 +635,25 @@ impl RenderOnce for Action {
     }
 }
 
-impl Action {
+impl LAction {
     pub fn new(
         image: Img,
         label: impl ToString,
         shortcut: Option<Shortcut>,
-        action: impl ActionFn + 'static,
+        action: impl LActionFn + 'static,
         hide: bool,
     ) -> Self {
-        Self {
-            label: label.to_string().into(),
-            shortcut,
-            action: Rc::new(action),
-            image,
-            hide,
-        }
+        Self { label: label.to_string().into(), shortcut, action: Arc::new(action), image, hide }
     }
+
     pub fn new_rc(
         image: Img,
         label: impl ToString,
         shortcut: Option<Shortcut>,
-        action: Rc<dyn ActionFn>,
+        action: Arc<dyn LActionFn>,
         hide: bool,
     ) -> Self {
-        Self {
-            label: label.to_string().into(),
-            shortcut,
-            action,
-            image,
-            hide,
-        }
+        Self { label: label.to_string().into(), shortcut, action, image, hide }
     }
 }
 
@@ -738,19 +664,13 @@ pub struct Dropdown {
 }
 
 impl Render for Dropdown {
-    fn render(&mut self, _: &mut gpui::Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<theme::Theme>();
         if self.items.is_empty() {
             return div();
         }
 
-        let label = self
-            .items
-            .iter()
-            .find(|item| item.0.eq(&self.value))
-            .unwrap()
-            .1
-            .clone();
+        let label = self.items.iter().find(|item| item.0.eq(&self.value)).unwrap().1.clone();
         div()
             .px_2()
             .py_0p5()
@@ -771,13 +691,13 @@ impl Render for Dropdown {
 
 #[derive(Clone)]
 pub struct Actions {
-    global: Entity<Vec<Action>>,
-    local: Entity<Vec<Action>>,
+    global: Entity<Vec<LAction>>,
+    local: Entity<Vec<LAction>>,
     pub active: Option<StateItem>,
     meta: Option<AnyEntity>,
     show: bool,
     query: Option<TextInput>,
-    list: Option<Entity<List>>,
+    list: Option<Entity<LList>>,
     update_sender: crossbeam_channel::Sender<bool>,
     pub toast: Toast,
     pub dropdown: Entity<Dropdown>,
@@ -786,32 +706,31 @@ pub struct Actions {
 impl Actions {
     fn new(update_sender: crossbeam_channel::Sender<bool>, cx: &mut App) -> Self {
         Self {
-            global: cx.new_model(|_| Vec::new()),
-            local: cx.new_model(|_| Vec::new()),
+            global: cx.new(|_| Vec::new()),
+            local: cx.new(|_| Vec::new()),
             active: None,
             meta: None,
             show: false,
             query: None,
             list: None,
             toast: Toast::init(cx),
-            dropdown: cx.new_view(|_| Dropdown {
-                value: "".to_string(),
-                items: vec![],
-            }),
+            dropdown: cx.new(|_| Dropdown { value: "".to_string(), items: vec![] }),
             update_sender,
         }
     }
+
     pub fn default(cx: &mut App) -> Self {
         let (s, _) = crossbeam_channel::unbounded::<bool>();
         Self::new(s, cx)
     }
-    fn combined(&self, cx: &App) -> Vec<Action> {
+
+    fn combined(&self, cx: &App) -> Vec<LAction> {
         let mut combined = self.local.read(cx).clone();
         combined.append(&mut self.global.read(cx).clone());
         if let Some(action) = combined.get_mut(0) {
             let key = "enter";
             action.shortcut = Some(Shortcut::new(key));
-            combined.push(Action::new(
+            combined.push(LAction::new(
                 Img::default().icon(Icon::BookOpen),
                 "Actions",
                 Some(Shortcut::new("k").cmd()),
@@ -824,6 +743,7 @@ impl Actions {
         }
         combined
     }
+
     fn update_list(&self, cx: &mut App) {
         if let Some(list) = &self.list {
             list.update(cx, |this, cx| {
@@ -832,6 +752,7 @@ impl Actions {
             });
         }
     }
+
     fn popup(&mut self, cx: &mut Context<Self>) -> Div {
         if !self.show {
             return div();
@@ -841,7 +762,7 @@ impl Actions {
         let list = self.list.clone().unwrap();
         let el_height = 42.0;
         let count = list.read(cx).items.read(cx).len();
-        let height = Pixels(if count == 0 {
+        let height = Pixels::from(if count == 0 {
             0.0
         } else if count > 4 {
             4.0 * el_height + 20.0
@@ -864,13 +785,7 @@ impl Actions {
             .child(if count > 0 {
                 div().h(height).p_2().child(list)
             } else {
-                div()
-                    .child("No results")
-                    .px_2()
-                    .py_8()
-                    .flex()
-                    .items_center()
-                    .justify_center()
+                div().child("No results").px_2().py_8().flex().items_center().justify_center()
             })
             .child(
                 div()
@@ -883,7 +798,8 @@ impl Actions {
                     .text_sm(),
             )
     }
-    fn check(&self, keystroke: &Keystroke, cx: &App) -> Option<Action> {
+
+    fn check(&self, keystroke: &Keystroke, cx: &App) -> Option<LAction> {
         let actions = self.combined(cx);
         for action in actions {
             if let Some(shortcut) = &action.shortcut {
@@ -894,9 +810,11 @@ impl Actions {
         }
         None
     }
+
     pub fn update(&self) {
         let _ = self.update_sender.send(true);
     }
+
     pub fn set_dropdown_value(&mut self, value: impl ToString, cx: &mut App) {
         self.dropdown.update(cx, |this, cx| {
             let value = value.to_string();
@@ -912,35 +830,35 @@ impl Actions {
         });
         self.update()
     }
+
     pub fn dropdown_cycle(&mut self, cx: &mut App) {
         self.dropdown.update(cx, |this, cx| {
             if this.items.is_empty() {
                 return;
             }
-            let index = this
-                .items
-                .iter()
-                .position(|item| item.0.eq(&this.value))
-                .unwrap_or(0);
+            let index = this.items.iter().position(|item| item.0.eq(&this.value)).unwrap_or(0);
             let next = (index + 1) % this.items.len();
             this.value = this.items[next].0.clone();
             cx.notify();
         });
         self.update()
     }
+
     pub fn has_focus(&self, cx: &App) -> bool {
         self.query.as_ref().unwrap().downgrade().has_focus(cx)
     }
+
     pub fn get_meta_model<V: Clone + 'static>(&self) -> Option<Entity<V>> {
         self.meta.clone().and_then(|m| m.downcast::<V>().ok())
     }
+
     pub fn get_meta<V: Clone + 'static>(&self, cx: &App) -> Option<V> {
         self.get_meta_model().map(|v| v.read(cx)).cloned()
     }
 }
 
 impl Render for Actions {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let combined = self.combined(cx).clone();
         let theme = cx.global::<theme::Theme>();
         if let Some(action) = combined.first() {
@@ -951,7 +869,7 @@ impl Render for Actions {
                 .items_center()
                 .font_weight(FontWeight::SEMIBOLD)
                 .child(div().child(action.clone()).text_color(theme.text))
-                .child(div().h_2_3().w(Pixels(2.0)).bg(theme.surface0).mx_2())
+                .child(div().h_2_3().w(Pixels::from(2.0)).bg(theme.surface0).mx_2())
                 .child(open)
                 .child(self.popup(cx))
         } else {
@@ -968,27 +886,24 @@ pub struct ActionsModel {
 impl ActionsModel {
     pub fn init(
         update_sender: crossbeam_channel::Sender<bool>,
+        window: &mut Window,
         cx: &mut App,
     ) -> (Self, Entity<Actions>) {
-        let inner = cx.new_view(|cx| {
+        let inner = cx.new(|cx| {
             #[cfg(debug_assertions)]
-            cx.on_release(|_, _, _| debug!("ActionsModel released"))
-                .detach();
+            cx.on_release(|_, _| debug!("ActionsModel released")).detach();
             Actions::new(update_sender, cx)
         });
 
-        let model = Self {
-            inner: inner.downgrade(),
-        };
+        let model = Self { inner: inner.downgrade() };
         inner.update(cx, |this, cx| {
             let (_s, r) = crossbeam_channel::unbounded::<bool>();
-            let query = TextInput::new(cx);
+            let query = TextInput::new(window, cx);
             let mut context = StateViewContext {
                 query: query.downgrade(),
                 actions: model.clone(),
                 update_receiver: r,
             };
-
             context.query.set_placeholder("Search for actions...", cx);
 
             let actions = this.clone();
@@ -1011,7 +926,7 @@ impl ActionsModel {
                                 Some(
                                     ItemBuilder::new(
                                         item.label.clone(),
-                                        ListItem::new(
+                                        LListItem::new(
                                             Some(action.image.clone()),
                                             item.label.clone(),
                                             None,
@@ -1027,6 +942,7 @@ impl ActionsModel {
                     ))
                 },
                 &mut context,
+                window,
                 cx,
             );
             let list_clone = list.downgrade();
@@ -1034,15 +950,13 @@ impl ActionsModel {
             cx.subscribe(&query.view, move |this, _, event, cx| {
                 match event {
                     TextEvent::Blur | TextEvent::Back => {
-                        // TODO
-                        // this.show = false;
+                        this.show = false;
                         cx.notify();
-                    }
+                    },
                     TextEvent::KeyDown(ev) => {
                         let key = "enter";
                         if Shortcut::new(key).get().eq(&ev.keystroke) {
-                            // TODO
-                            // this.show = false;
+                            this.show = false;
                             cx.notify();
                             let _ = list_clone.update(cx, |this2, cx| {
                                 if let Some(action) = this2.default_action(cx) {
@@ -1059,12 +973,11 @@ impl ActionsModel {
                             return;
                         }
                         if ev.keystroke.key.as_str() == "escape" {
-                            // TODO
-                            // this.show = false;
+                            this.show = false;
                             cx.notify();
                         }
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
                 cx.notify();
             })
@@ -1076,7 +989,8 @@ impl ActionsModel {
         });
         (model, inner)
     }
-    pub fn update_global(&self, actions: Vec<Action>, cx: &mut App) {
+
+    pub fn update_global(&self, actions: Vec<LAction>, cx: &mut App) {
         let _ = self.inner.update(cx, |model, cx| {
             model.global.update(cx, |this, cx| {
                 *this = actions;
@@ -1085,9 +999,10 @@ impl ActionsModel {
             model.update_list(cx);
         });
     }
+
     pub fn update_local(
         &self,
-        actions: Vec<Action>,
+        actions: Vec<LAction>,
         item: Option<StateItem>,
         meta: Option<AnyEntity>,
         cx: &mut App,
@@ -1102,6 +1017,7 @@ impl ActionsModel {
             model.update_list(cx);
         });
     }
+
     pub fn clear_local(&self, cx: &mut App) {
         let _ = self.inner.update(cx, |model, cx| {
             model.active = None;
@@ -1112,12 +1028,14 @@ impl ActionsModel {
             model.update_list(cx);
         });
     }
+
     pub fn get_dropdown_value(&self, cx: &App) -> String {
         self.inner
             .upgrade()
             .map(|this| this.read(cx).dropdown.read(cx).value.clone())
             .unwrap_or_default()
     }
+
     pub fn set_dropdown(
         &mut self,
         value: impl ToString,

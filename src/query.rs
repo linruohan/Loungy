@@ -1,23 +1,10 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
-use gpui::{
-    div, App, ClipboardItem, Entity, EventEmitter, FocusHandle, HighlightStyle, InteractiveElement,
-    InteractiveText, IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce, Styled,
-    StyledText, TextStyle, VisualContext, WeakEntity,
-};
-use log::debug;
 use std::ops::Range;
 
+use crate::list::LList;
 use crate::theme::Theme;
+use gpui::{div, App, AppContext, ClipboardItem, Context, Entity, EventEmitter, FocusHandle, Focusable, HighlightStyle, InteractiveElement, InteractiveText, IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce, Styled, StyledText, TextStyle, WeakEntity, Window};
+use log::debug;
+use numbat::markup::text;
 
 #[derive(IntoElement, Clone)]
 pub struct TextInput {
@@ -26,16 +13,14 @@ pub struct TextInput {
 }
 
 impl TextInput {
-    pub fn new(cx: &mut App) -> Self {
+    pub fn new(window: &mut Window, cx: &mut App) -> Self {
         let focus_handle = cx.focus_handle();
-        let view = TextView::init(cx, &focus_handle);
+        let view = TextView::init(window, cx, &focus_handle);
         Self { focus_handle, view }
     }
+
     pub fn downgrade(&self) -> TextInputWeak {
-        TextInputWeak {
-            focus_handle: self.focus_handle.clone(),
-            view: self.view.downgrade(),
-        }
+        TextInputWeak { focus_handle: self.focus_handle.clone(), view: self.view.downgrade() }
     }
 }
 
@@ -45,6 +30,11 @@ pub struct TextInputWeak {
     pub view: WeakEntity<TextView>,
 }
 
+impl Focusable for TextInputWeak {
+    fn focus_handle(&self, _: &App) -> FocusHandle {
+        self.focus_handle.clone()
+    }
+}
 impl TextInputWeak {
     pub fn get_text(&self, cx: &App) -> String {
         if let Some(view) = self.view.upgrade() {
@@ -52,31 +42,34 @@ impl TextInputWeak {
         }
         "".to_string()
     }
-    pub fn set_placeholder<C: VisualContext>(&self, placeholder: impl ToString, cx: &mut C) {
+
+    pub fn set_placeholder(&self, placeholder: impl ToString, cx: &mut App) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.placeholder = placeholder.to_string();
                 cx.notify();
             });
         }
     }
-    pub fn set_text<C: VisualContext>(&self, text: impl ToString, cx: &mut C) {
+    pub fn set_text(&self, text: impl ToString, cx: &mut App) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.set_text(text, cx);
             });
         }
     }
-    pub fn set_masked<C: VisualContext>(&self, masked: bool, cx: &mut C) {
+
+    pub fn set_masked(&self, masked: bool, cx: &mut App) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.set_masked(masked, cx);
             });
         }
     }
+
     pub fn has_focus(&self, cx: &App) -> bool {
-        if let Some(fh) = cx.focused() {
-            return fh.eq(&self.focus_handle);
+        if cx.focus_handle() == self.focus_handle {
+            return true
         }
         false
     }
@@ -91,7 +84,7 @@ pub struct TextView {
 }
 
 impl TextView {
-    pub fn init(cx: &mut App, focus_handle: &FocusHandle) -> Entity<Self> {
+    pub fn init(window: &mut Window, cx: &mut App, focus_handle: &FocusHandle) -> Entity<Self> {
         let m = Self {
             text: "".to_string(),
             selection: 0..0,
@@ -99,15 +92,14 @@ impl TextView {
             placeholder: "Type here...".to_string(),
             masked: false,
         };
-        let view = cx.new_view(|cx| {
+        let view = cx.new(|cx| {
             #[cfg(debug_assertions)]
-            cx.on_release(|_, _, _| debug!("Text Input released"))
-                .detach();
-            cx.on_blur(focus_handle, |_: &mut TextView, cx| {
+            cx.on_release(|_, _| debug!("Text Input released")).detach();
+            cx.on_blur(focus_handle, window, |_: &mut TextView, _, cx| {
                 cx.emit(TextEvent::Blur);
             })
             .detach();
-            cx.on_focus(focus_handle, |view, cx| {
+            cx.on_focus(focus_handle, window, |view, _, cx| {
                 view.select_all(cx);
             })
             .detach();
@@ -123,14 +115,14 @@ impl TextView {
         .detach();
         view
     }
+
     pub fn set_text(&mut self, text: impl ToString, cx: &mut Context<Self>) {
         self.text = text.to_string();
         self.selection = self.text.len()..self.text.len();
         cx.notify();
-        cx.emit(TextEvent::Input {
-            text: self.text.clone(),
-        });
+        cx.emit(TextEvent::Input { text: self.text.clone() });
     }
+
     pub fn set_masked(&mut self, masked: bool, cx: &mut Context<Self>) {
         self.masked = masked;
         cx.notify();
@@ -140,27 +132,20 @@ impl TextView {
         self.text = "".to_string();
         self.selection = 0..0;
         cx.notify();
-        cx.emit(TextEvent::Input {
-            text: self.text.clone(),
-        });
+        cx.emit(TextEvent::Input { text: self.text.clone() });
     }
+
     pub fn char_range_to_text_range(&self, text: &str) -> Range<usize> {
-        let start = text
-            .chars()
-            .take(self.selection.start)
-            .collect::<String>()
-            .len();
-        let end = text
-            .chars()
-            .take(self.selection.end)
-            .collect::<String>()
-            .len();
+        let start = text.chars().take(self.selection.start).collect::<String>().len();
+        let end = text.chars().take(self.selection.end).collect::<String>().len();
         start..end
     }
+
     pub fn select_all(&mut self, cx: &mut Context<Self>) {
         self.selection = 0..self.text.chars().count();
         cx.notify();
     }
+
     pub fn word_ranges(&self) -> Vec<Range<usize>> {
         let mut words = Vec::new();
         let mut last_was_boundary = true;
@@ -189,7 +174,6 @@ impl TextView {
         words
     }
 }
-
 pub enum TextEvent {
     Input { text: String },
     Blur,
@@ -200,13 +184,13 @@ pub enum TextEvent {
 impl EventEmitter<TextEvent> for TextView {}
 
 impl RenderOnce for TextInput {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        cx.focus(&self.focus_handle);
-        //let theme = cx.global::<Theme>();
+    fn render(self, window: &mut Window, _: &mut App) -> impl IntoElement {
+        window.focus(&self.focus_handle);
+        // let theme = cx.global::<Theme>();
         let clone = self.view.clone();
         div()
             .track_focus(&self.focus_handle)
-            .on_key_down(move |ev, cx| {
+            .on_key_down(move |ev, _, cx| {
                 self.view.update(cx, |editor, cx| {
                     let prev = editor.text.clone();
                     cx.emit(TextEvent::KeyDown(ev.clone()));
@@ -217,7 +201,7 @@ impl RenderOnce for TextInput {
                     #[cfg(not(target_os = "macos"))]
                     let m = ev.keystroke.modifiers.control;
 
-                    let ime_key = &ev.keystroke.ime_key;
+                    let ime_key = &ev.keystroke.key_char;
 
                     if m {
                         match keystroke.as_str() {
@@ -294,8 +278,8 @@ impl RenderOnce for TextInput {
                                     let i = (editor.selection.start - 1).min(chars.len());
                                     editor.text = chars[0..i].iter().collect::<String>()
                                         + &(chars[editor.selection.end.min(chars.len())..]
-                                            .iter()
-                                            .collect::<String>());
+                                        .iter()
+                                        .collect::<String>());
                                     editor.selection = i..i;
                                 } else {
                                     editor.text.replace_range(
@@ -361,9 +345,9 @@ impl Render for TextView {
             highlights = vec![];
         }
 
-        let styled_text = StyledText::new(text + " ").with_highlights(&style, highlights);
-        let view = cx.view().clone();
-        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, cx| {
+        let styled_text = StyledText::new(text + " ").with_highlights(highlights);
+        let view = cx.entity().clone();
+        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, _, cx| {
             view.update(cx, |editor, cx| {
                 let (index, mut count) = editor.word_click;
                 if index == ev {
@@ -375,15 +359,15 @@ impl Render for TextView {
                     2 => {
                         let word_ranges = editor.word_ranges();
                         editor.selection = word_ranges.get(ev).unwrap().clone();
-                    }
+                    },
                     3 => {
                         // Should select the line
-                    }
+                    },
                     4 => {
                         count = 0;
                         editor.selection = 0..editor.text.len();
-                    }
-                    _ => {}
+                    },
+                    _ => {},
                 }
                 editor.word_click = (ev, count);
                 cx.notify();

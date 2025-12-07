@@ -1,25 +1,22 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
+//  This source file is part of the Loungy open source project
+//
+//  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
+//  Licensed under MIT License
+//
+//  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
+//
 
 mod desktop_file;
 
+use std::{env, fs, path::PathBuf};
+
 use walkdir::WalkDir;
 
-use crate::components::shared::{Icon, Img};
-use crate::paths::paths;
-
-use std::path::PathBuf;
-use std::{env, fs};
-
 use super::AppData;
+use crate::{
+    components::shared::{Icon, Img},
+    paths::paths,
+};
 
 pub fn get_application_data(path: &PathBuf) -> Option<AppData> {
     let cache_dir = paths().cache.join("apps");
@@ -71,12 +68,7 @@ pub fn get_application_folders() -> Vec<PathBuf> {
     }
 
     if let Ok(xdg_data_dirs) = env::var("XDG_DATA_DIRS") {
-        dirs.extend(
-            xdg_data_dirs
-                .split(":")
-                .map(|s| PathBuf::from(s))
-                .filter(|d| d.exists()),
-        );
+        dirs.extend(xdg_data_dirs.split(":").map(|s| PathBuf::from(s)).filter(|d| d.exists()));
     } else {
         let usr_local_share = PathBuf::from("/usr/local/share");
         let usr_share = PathBuf::from("/usr/share");
@@ -101,11 +93,7 @@ pub fn get_application_files() -> Vec<PathBuf> {
         let walker = WalkDir::new(dir).into_iter();
         for entry in walker {
             if let Ok(entry) = entry {
-                if entry
-                    .path()
-                    .extension()
-                    .and_then(|ext| Some(ext == "desktop"))
-                    .unwrap_or(false)
+                if entry.path().extension().and_then(|ext| Some(ext == "desktop")).unwrap_or(false)
                 {
                     files.push(entry.path().to_path_buf());
                 }

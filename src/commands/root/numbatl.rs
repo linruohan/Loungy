@@ -1,21 +1,20 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
+//  This source file is part of the Loungy open source project
+//
+//  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
+//  Licensed under MIT License
+//
+//  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
+//
+
 use gpui::{
-    div, svg, AnyElement, App, Entity, FontWeight, IntoElement, ParentElement, Render, Styled,
+    AnyElement, App, AppContext, Entity, FontWeight, IntoElement, ParentElement, Render, Styled,
+    Window, div, svg,
 };
 use numbat::{
+    Context as NumbatContext,
     markup::{Formatter, PlainTextFormatter},
     module_importer::BuiltinModuleImporter,
     pretty_print::PrettyPrint,
-    Context,
 };
 
 use crate::{
@@ -33,7 +32,6 @@ pub struct NumbatResult {
     type_id: String,
 }
 
-#[derive(Clone)]
 pub struct Numbat {
     pub result: Option<NumbatResult>,
 }
@@ -52,23 +50,23 @@ fn rephraser(s: &str) -> String {
 impl Numbat {
     pub fn init(query: &TextInputWeak, cx: &mut App) -> Entity<Numbat> {
         let importer = BuiltinModuleImporter::default();
-        let mut ctx = Context::new(importer);
+        let mut ctx = NumbatContext::new(importer);
         ctx.load_currency_module_on_demand(true);
-        Context::prefetch_exchange_rates();
+        NumbatContext::prefetch_exchange_rates();
         let _ = ctx.interpret("use prelude", numbat::resolver::CodeSource::Text);
 
-        cx.new_view(move |cx| {
+        cx.new(move |cx| {
             if let Some(query) = query.view.upgrade() {
                 cx.subscribe(&query, move |subscriber: &mut Numbat, _, event, cx| {
                     if let TextEvent::Input { text } = event {
-                        let result =
-                            ctx.interpret(&rephraser(text), numbat::resolver::CodeSource::Text);
+                        let text = rephraser(&text);
+                        let result = ctx.interpret(&text, numbat::resolver::CodeSource::Text);
                         let formatter = PlainTextFormatter {};
                         subscriber.result = match result {
                             Ok((statements, result)) => {
                                 let s: Vec<String> = statements
                                     .iter()
-                                    .map(|s| formatter.format(&s.pretty_print(), false))
+                                    .map(|s| formatter.format(&s.pretty_print(), false).to_string())
                                     .collect();
                                 let s = s.join(" ");
                                 let result = &result.to_markup(
@@ -83,18 +81,18 @@ impl Numbat {
                                 for part in &result.0 {
                                     match part.1 {
                                         numbat::markup::FormatType::String => {
-                                            value = Some(part.2.clone())
-                                        }
+                                            value = Some(part.2.to_string())
+                                        },
                                         numbat::markup::FormatType::Value => {
-                                            value = Some(part.2.clone());
-                                        }
+                                            value = Some(part.2.to_string());
+                                        },
                                         numbat::markup::FormatType::TypeIdentifier => {
-                                            type_id = Some(part.2.clone());
-                                        }
+                                            type_id = Some(part.2.to_string());
+                                        },
                                         numbat::markup::FormatType::Unit => {
                                             unit = Some(part.2.to_string());
-                                        }
-                                        _ => {}
+                                        },
+                                        _ => {},
                                     }
                                 }
                                 value.map(|value| NumbatResult {
@@ -103,7 +101,7 @@ impl Numbat {
                                     type_id: type_id.unwrap_or_default(),
                                     equation: s.replace('➞', "to"),
                                 })
-                            }
+                            },
                             Err(_e) => None,
                         };
                         cx.notify();
@@ -129,16 +127,13 @@ impl ItemComponent for NumbatWrapper {
 }
 
 impl Render for Numbat {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut gpui::Context<Self>) -> impl IntoElement {
         let theme = cx.global::<Theme>();
         if self.result.is_none() {
             return div();
         }
         let result = self.result.as_ref().unwrap().clone();
-        let len = result
-            .equation
-            .len()
-            .max(format!("{} {}", result.result, result.unit).len());
+        let len = result.equation.len().max(format!("{} {}", result.result, result.unit).len());
 
         if len > 30 {
             div().text_sm()
@@ -152,15 +147,7 @@ impl Render for Numbat {
         .flex()
         .font_weight(FontWeight::SEMIBOLD)
         .relative()
-        .child(
-            div()
-                .w_1_2()
-                .h_24()
-                .flex()
-                .items_center()
-                .justify_center()
-                .child(result.equation),
-        )
+        .child(div().w_1_2().h_24().flex().items_center().justify_center().child(result.equation))
         .child(
             div()
                 .w_1_2()
@@ -177,12 +164,7 @@ impl Render for Numbat {
                 .items_center()
                 .justify_center()
                 .inset_0()
-                .child(
-                    svg()
-                        .path(Icon::MoveRight.path())
-                        .size_12()
-                        .text_color(theme.surface0),
-                ),
+                .child(svg().path(Icon::MoveRight.path()).size_12().text_color(theme.surface0)),
         )
     }
 }

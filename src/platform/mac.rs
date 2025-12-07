@@ -1,27 +1,23 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
+//  This source file is part of the Loungy open source project
+//
+//  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
+//  Licensed under MIT License
+//
+//  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
+//
 
-use crate::components::shared::Img;
-use crate::paths::paths;
-use crate::window::LWindow;
-use cocoa::appkit::NSPasteboard;
-use gpui::{App, AsyncWindowContext};
-use std::time::Duration;
 use std::{
     fs,
     path::{Path, PathBuf},
+    time::Duration,
 };
-use swift_rs::{swift, Bool, SRObject, SRString};
+
+use cocoa::appkit::NSPasteboard;
+use gpui::{App, AsyncWindowContext};
+use swift_rs::{Bool, SRObject, SRString, swift};
 
 use super::{AppData, ClipboardWatcher};
+use crate::{components::shared::Img, paths::paths, window::LWindow};
 
 #[repr(C)]
 struct AppDataMac {
@@ -67,9 +63,7 @@ pub fn get_application_data(path: &Path) -> Option<AppData> {
 }
 
 pub fn get_application_folders() -> Vec<PathBuf> {
-    let user_dir = PathBuf::from("/Users")
-        .join(whoami::username())
-        .join("Applications");
+    let user_dir = PathBuf::from("/Users").join(whoami::username()).join("Applications");
     let mut user_dirs = user_dir
         .read_dir()
         .map(|i| {
@@ -183,11 +177,7 @@ pub fn close_and_paste_file(path: &Path, cx: &mut App) {
 pub fn autofill(value: &str, password: bool, prev: &str) -> Option<String> {
     unsafe {
         swift!( fn autofill(value: SRString, password: Bool, prev: SRString) -> Option<SRString>);
-        autofill(
-            SRString::from(value),
-            Bool::from(password),
-            SRString::from(prev),
-        )
+        autofill(SRString::from(value), Bool::from(password), SRString::from(prev))
     }
     .map(|s| s.to_string())
 }
@@ -210,9 +200,7 @@ pub async fn clipboard(
                 change_count = pasteboard.changeCount();
                 on_change(&mut cx);
             }
-            cx.background_executor()
-                .timer(Duration::from_millis(50))
-                .await;
+            cx.background_executor().timer(Duration::from_millis(50)).await;
         }
     }
 }

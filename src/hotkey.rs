@@ -1,14 +1,3 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
 use std::{collections::HashMap, sync::OnceLock, time::Duration};
 
 use bonsaidb::{
@@ -16,10 +5,10 @@ use bonsaidb::{
     local::Database,
 };
 use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyEvent, GlobalHotKeyManager,
+    hotkey::{Code, HotKey, Modifiers},
 };
-use gpui::{App, BorrowAppContext, Global, Keystroke};
+use gpui::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -63,7 +52,7 @@ impl HotkeyManager {
         });
 
         Self::update(cx);
-        cx.spawn(|mut cx| async move {
+        cx.spawn(async move |cx| {
             loop {
                 if let Ok(event) = receiver.try_recv() {
                     if event.state == global_hotkey::HotKeyState::Released {
@@ -93,13 +82,12 @@ impl HotkeyManager {
                         });
                     }
                 }
-                cx.background_executor()
-                    .timer(Duration::from_millis(50))
-                    .await;
+                cx.background_executor().timer(Duration::from_millis(50)).await;
             }
         })
         .detach();
     }
+
     pub fn update(cx: &mut App) {
         cx.update_global::<HotkeyManager, _>(|manager, cx| {
             let commands = cx.global::<RootCommands>();
@@ -119,6 +107,7 @@ impl HotkeyManager {
             let _ = manager.manager.register_all(&manager.hotkeys);
         });
     }
+
     pub fn set(id: &str, keystroke: Keystroke, cx: &mut App) -> anyhow::Result<()> {
         // This is annoying and will break for most hotkeys
         let mut tokens = Vec::<&str>::new();
@@ -142,14 +131,11 @@ impl HotkeyManager {
 
         HotKey::try_from(hotkey.clone())?;
 
-        CommandHotkeys {
-            id: id.to_string(),
-            hotkey,
-        }
-        .overwrite_into(&id.to_string(), db())?;
+        CommandHotkeys { id: id.to_string(), hotkey }.overwrite_into(&id.to_string(), db())?;
         Self::update(cx);
         Ok(())
     }
+
     pub fn unset(id: &str, cx: &mut App) -> anyhow::Result<()> {
         if let Some(hk) = CommandHotkeys::get(&id.to_string(), db())? {
             hk.delete(db())?;
@@ -157,21 +143,19 @@ impl HotkeyManager {
         Self::update(cx);
         Ok(())
     }
+
     pub fn get(id: &str) -> Option<Keystroke> {
         CommandHotkeys::get(&id.to_string(), db()).ok()?.map(|hk| {
-            hk.contents
-                .hotkey
-                .split('+')
-                .fold(Keystroke::default(), |mut keystroke, token| {
-                    match token {
-                        "alt" => keystroke.modifiers.alt = true,
-                        "command" => keystroke.modifiers.platform = true,
-                        "control" => keystroke.modifiers.control = true,
-                        "shift" => keystroke.modifiers.shift = true,
-                        _ => keystroke.key = token.to_string(),
-                    }
-                    keystroke
-                })
+            hk.contents.hotkey.split('+').fold(Keystroke::default(), |mut keystroke, token| {
+                match token {
+                    "alt" => keystroke.modifiers.alt = true,
+                    "command" => keystroke.modifiers.platform = true,
+                    "control" => keystroke.modifiers.control = true,
+                    "shift" => keystroke.modifiers.shift = true,
+                    _ => keystroke.key = token.to_string(),
+                }
+                keystroke
+            })
         })
     }
 }

@@ -1,13 +1,3 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
 use gpui::{App, Global, Hsla, Rgba, SharedString, WindowAppearance, WindowBackgroundAppearance};
 use log::error;
 use serde::{Deserialize, Serialize};
@@ -15,13 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::{db::db, paths::paths};
 
 fn color_to_hsla(color: catppuccin::Colour) -> Hsla {
-    Rgba {
-        r: color.0 as f32 / 255.0,
-        g: color.1 as f32 / 255.0,
-        b: color.2 as f32 / 255.0,
-        a: 1.0,
-    }
-    .into()
+    Rgba { r: color.0 as f32 / 255.0, g: color.1 as f32 / 255.0, b: color.2 as f32 / 255.0, a: 1.0 }
+        .into()
 }
 
 impl From<catppuccin::Flavour> for Theme {
@@ -29,13 +14,7 @@ impl From<catppuccin::Flavour> for Theme {
         let colors = flavor.colours();
         let name = flavor.name();
         // name capitalized
-        let name = name
-            .chars()
-            .next()
-            .unwrap()
-            .to_uppercase()
-            .collect::<String>()
-            + &name[1..];
+        let name = name.chars().next().unwrap().to_uppercase().collect::<String>() + &name[1..];
         Self {
             name: format!("Catppuccin {}", name).into(),
             font_sans: "Inter".into(),
@@ -134,10 +113,10 @@ impl From<WindowBackgroundAppearanceContent> for WindowBackgroundAppearance {
         match content {
             WindowBackgroundAppearanceContent::Blurred { .. } => {
                 WindowBackgroundAppearance::Blurred
-            }
+            },
             WindowBackgroundAppearanceContent::Transparent { .. } => {
                 WindowBackgroundAppearance::Transparent
-            }
+            },
             WindowBackgroundAppearanceContent::Opaque => WindowBackgroundAppearance::Opaque,
         }
     }
@@ -161,10 +140,7 @@ pub struct ThemeSettings {
 
 impl Default for ThemeSettings {
     fn default() -> Self {
-        Self {
-            light: "Catppuccin Latte".into(),
-            dark: "Catppuccin Mocha".into(),
-        }
+        Self { light: "Catppuccin Latte".into(), dark: "Catppuccin Mocha".into() }
     }
 }
 
@@ -176,6 +152,7 @@ impl Theme {
 
         cx.set_global(theme);
     }
+
     pub fn mode(mode: WindowAppearance) -> Theme {
         let settings = db().get::<ThemeSettings>("theme").unwrap_or_default();
         let list = Theme::list();
@@ -206,12 +183,12 @@ impl Theme {
                             Err(e) => {
                                 error!("Failed to parse theme: {}", e);
                                 return None;
-                            }
+                            },
                         },
                         Err(e) => {
                             error!("Failed to read theme: {}", e);
                             return None;
-                        }
+                        },
                     };
                     Some(theme)
                 })
@@ -219,12 +196,10 @@ impl Theme {
             Err(e) => {
                 error!("Failed to read themes: {}", e);
                 vec![]
-            }
+            },
         };
-        let mut themes: Vec<Theme> = catppuccin::Flavour::all()
-            .into_iter()
-            .map(Self::from)
-            .collect();
+        let mut themes: Vec<Theme> =
+            catppuccin::Flavour::all().into_iter().map(Self::from).collect();
         themes.append(&mut user_themes);
 
         themes

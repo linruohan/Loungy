@@ -1,20 +1,13 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-use crate::components::shared::{Icon, Img};
-use crate::loader::ActiveLoaders;
-use crate::state::{StateItem, StateModel};
-use crate::theme::Theme;
 use gpui::{
-    div, App, Context, Entity, InteractiveElement, IntoElement, MouseButton, ParentElement, Render,
-    Styled, Window,
+    App, AppContext, Context, Entity, InteractiveElement, IntoElement, MouseButton, ParentElement,
+    Render, Styled, Window, div,
+};
+use gpui_component::IconName;
+
+use crate::{
+    loader::ActiveLoaders,
+    state::{StateItem, StateModel},
+    theme::Theme,
 };
 
 pub struct Workspace {
@@ -22,9 +15,9 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn build(cx: &mut App) -> Entity<Self> {
-        cx.new_view(|cx| {
-            let state = StateModel::init(cx);
+    pub fn build(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| {
+            let state = StateModel::init(window, cx);
             Workspace { state }
         })
     }
@@ -41,10 +34,10 @@ impl Render for Workspace {
         if stack.len() > 1 {
             back = div()
                 .ml_2()
-                .on_mouse_down(MouseButton::Left, move |_, cx| {
+                .on_mouse_down(MouseButton::Left, move |_, _, cx| {
                     StateModel::update(|this, cx| this.pop(cx), cx);
                 })
-                .child(Img::default().icon(Icon::ArrowLeft));
+                .child(IconName::ArrowLeft);
         }
         let a = item.actions.read(cx).clone();
 
@@ -80,11 +73,7 @@ impl Render for Workspace {
                     .bg({
                         let mut bg = theme.mantle;
                         bg.fade_out(
-                            1.0 - theme
-                                .window_background
-                                .clone()
-                                .unwrap_or_default()
-                                .opacity(),
+                            1.0 - theme.window_background.clone().unwrap_or_default().opacity(),
                         );
                         bg
                     })

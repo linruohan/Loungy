@@ -1,12 +1,14 @@
-use crate::{state::LazyMutex, theme};
-use gpui::{
-    div, linear, relative, Animation, AnimationExt, App, IntoElement, ParentElement, RenderOnce,
-    Styled,
-};
 use std::{
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
     time::{Duration, Instant},
 };
+
+use gpui::{
+    Animation, AnimationExt, App, IntoElement, ParentElement, RenderOnce, Styled, Window, div,
+    linear, relative,
+};
+
+use crate::{state::LazyMutex, theme};
 
 #[derive(Clone)]
 pub struct Loader(Arc<AtomicBool>);
@@ -17,12 +19,11 @@ impl Loader {
         LOADERS.lock().loaders.push(loader.clone());
         loader
     }
+
     pub fn remove(&mut self) {
         self.0.store(false, std::sync::atomic::Ordering::Relaxed);
         let mut loaders = LOADERS.lock();
-        loaders
-            .loaders
-            .retain(|loader| loader.0.load(std::sync::atomic::Ordering::Relaxed));
+        loaders.loaders.retain(|loader| loader.0.load(std::sync::atomic::Ordering::Relaxed));
     }
 }
 
@@ -36,17 +37,12 @@ struct LoaderState {
 
 impl LoaderState {
     fn new() -> Self {
-        Self {
-            show: false,
-            timestamp: Instant::now(),
-            loaders: Vec::new(),
-        }
+        Self { show: false, timestamp: Instant::now(), loaders: Vec::new() }
     }
+
     fn get(&mut self) -> (bool, Instant) {
-        let active = self
-            .loaders
-            .iter()
-            .any(|loader| loader.0.load(std::sync::atomic::Ordering::Relaxed));
+        let active =
+            self.loaders.iter().any(|loader| loader.0.load(std::sync::atomic::Ordering::Relaxed));
 
         if self.show != active {
             self.show = active;
@@ -87,11 +83,7 @@ impl RenderOnce for ActiveLoaders {
                         let opacity = {
                             let i = show_ts.elapsed().as_millis() as f32 / 500.0;
                             let i = if i > 1.0 { 1.0 } else { i };
-                            if show {
-                                1.0 - i
-                            } else {
-                                i
-                            }
+                            if show { 1.0 - i } else { i }
                         };
                         let mut bg = theme.lavender;
 

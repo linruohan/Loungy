@@ -1,41 +1,30 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
-
-use gpui::{
-    div, list, relative, AnyElement, AnyEntity, App, Context, Entity, EventEmitter, FontWeight,
-    InteractiveElement, IntoElement, ListAlignment, ListOffset, ListScrollEvent, ListState,
-    MouseButton, ParentElement, Pixels, Render, RenderOnce, SharedString, Styled, Window,
-};
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},
     hash::{Hash, Hasher},
     rc::Rc,
-    sync::mpsc::channel,
+    sync::mpsc::{channel, Sender},
     time::Duration,
 };
 
-pub mod nucleo;
+use gpui::{
+    div, list, relative, AnyElement, AnyEntity, App, AppContext, Context,
+    Entity, EventEmitter, FontWeight, InteractiveElement, IntoElement, ListAlignment,
+    ListOffset, ListScrollEvent, ListState, MouseButton, ParentElement, Pixels, Render, RenderOnce, SharedString,
+    Styled, Window,
+};
+
+pub mod nucleoo;
 
 use log::debug;
+use nucleoo::fuzzy_match;
 
+use super::shared::{Img, ImgSource};
 use crate::{
     loader::Loader,
     query::{TextEvent, TextInputWeak},
-    state::{Action, ActionsModel, Shortcut, StateItem, StateViewContext},
+    state::{ActionsModel, LAction, Shortcut, StateItem, StateViewContext},
     theme::Theme,
 };
-
-use nucleo::fuzzy_match;
-
-use super::shared::{Img, ImgSource};
 
 #[derive(Clone, IntoElement)]
 pub enum Accessory {
@@ -45,11 +34,9 @@ pub enum Accessory {
 
 impl Accessory {
     pub fn new(tag: impl ToString, img: Option<Img>) -> Self {
-        Self::Tag {
-            tag: tag.to_string(),
-            img,
-        }
+        Self::Tag { tag: tag.to_string(), img }
     }
+
     pub fn shortcut(shortcut: Shortcut) -> Self {
         Self::Shortcut(shortcut)
     }
@@ -67,9 +54,8 @@ impl RenderOnce for Accessory {
                     .font_family(theme.font_mono.clone());
                 let el = if let Some(mut img) = img {
                     img.src = match img.src {
-                        ImgSource::Icon { icon, color } => ImgSource::Icon {
-                            icon,
-                            color: color.or(Some(theme.subtext0)),
+                        ImgSource::Icon { icon, color } => {
+                            ImgSource::Icon { icon, color: color.or(Some(theme.subtext0)) }
                         },
                         src => src,
                     };
@@ -78,21 +64,21 @@ impl RenderOnce for Accessory {
                     el
                 };
                 el.child(tag).ml_6()
-            }
+            },
             Accessory::Shortcut(shortcut) => div().child(shortcut),
         }
     }
 }
 
 #[derive(Clone)]
-pub struct ListItem {
+pub struct LListItem {
     title: SharedString,
     subtitle: Option<SharedString>,
     img: Option<Img>,
     accessories: Vec<Accessory>,
 }
 
-impl ListItem {
+impl LListItem {
     pub fn new(
         img: Option<Img>,
         title: impl ToString,
@@ -108,7 +94,7 @@ impl ListItem {
     }
 }
 
-impl ItemComponent for ListItem {
+impl ItemComponent for LListItem {
     fn render(&self, _selected: bool, cx: &App) -> AnyElement {
         let theme = cx.global::<Theme>();
         let el = if let Some(img) = &self.img {
@@ -120,30 +106,14 @@ impl ItemComponent for ListItem {
         .w_full()
         .items_center()
         .text_xs()
-        .child(
-            div()
-                .text_sm()
-                .child(self.title.clone())
-                .font_weight(FontWeight::MEDIUM),
-        );
+        .child(div().text_sm().child(self.title.clone()).font_weight(FontWeight::MEDIUM));
         let el = if let Some(subtitle) = &self.subtitle {
-            el.child(
-                div()
-                    .ml_2()
-                    .text_color(theme.subtext0)
-                    .child(subtitle.clone()),
-            )
+            el.child(div().ml_2().text_color(theme.subtext0).child(subtitle.clone()))
         } else {
             el
         };
-        el.child(
-            div()
-                .flex()
-                .items_center()
-                .ml_auto()
-                .children(self.accessories.clone()),
-        )
-        .into_any_element()
+        el.child(div().flex().items_center().ml_auto().children(self.accessories.clone()))
+            .into_any_element()
     }
 }
 
@@ -154,7 +124,7 @@ pub trait ItemComponent {
 pub struct ItemBuilder {
     id: u64,
     preview: Option<(f32, Rc<dyn Preview>)>,
-    actions: Vec<Action>,
+    actions: Vec<LAction>,
     weight: Option<u16>,
     keywords: Vec<SharedString>,
     component: Rc<dyn ItemComponent>,
@@ -178,30 +148,37 @@ impl ItemBuilder {
             component: Rc::new(component),
         }
     }
+
     pub fn preview(mut self, width: f32, preview: impl Preview + 'static) -> Self {
         self.preview = Some((width, Rc::new(preview)));
         self
     }
+
     pub fn meta(mut self, meta: AnyEntity) -> Self {
         self.meta = Some(meta);
         self
     }
+
     pub fn keywords(mut self, keywords: Vec<impl ToString>) -> Self {
         self.keywords = keywords.into_iter().map(|k| k.to_string().into()).collect();
         self
     }
-    pub fn actions(mut self, actions: Vec<Action>) -> Self {
+
+    pub fn actions(mut self, actions: Vec<LAction>) -> Self {
         self.actions = actions;
         self
     }
+
     pub fn weight(mut self, weight: u16) -> Self {
         self.weight = Some(weight);
         self
     }
+
     pub fn preset(mut self, preset: ItemPreset) -> Self {
         self.preset = preset;
         self
     }
+
     pub fn build(self) -> Item {
         Item {
             id: self.id,
@@ -229,7 +206,7 @@ pub enum ItemPreset {
 pub struct Item {
     id: u64,
     preview: Option<(f32, Rc<dyn Preview>)>,
-    actions: Vec<Action>,
+    actions: Vec<LAction>,
     weight: Option<u16>,
     keywords: Vec<SharedString>,
     component: Rc<dyn ItemComponent>,
@@ -240,12 +217,9 @@ pub struct Item {
 
 impl Item {
     pub fn get_meta<V: Clone + 'static>(&self, cx: &App) -> Option<V> {
-        self.meta
-            .clone()
-            .and_then(|m| m.downcast::<V>().ok())
-            .map(|v| v.read(cx))
-            .cloned()
+        self.meta.clone().and_then(|m| m.downcast::<V>().ok()).map(|v| v.read(cx)).cloned()
     }
+
     pub fn get_keywords(&self) -> Vec<SharedString> {
         self.keywords.clone()
     }
@@ -272,12 +246,12 @@ impl RenderOnce for Item {
                 .rounded_xl()
                 .child(self.component.render(self.selected, cx))
                 .into_any_element()
-            }
+            },
         }
     }
 }
 
-type ScrollHandler = Option<Box<dyn FnMut(&ListScrollEvent, &mut App)>>;
+type ScrollHandler = Option<Box<dyn FnMut(&ListScrollEvent, &mut Window, &mut App)>>;
 
 pub struct ListBuilder {
     reverse: bool,
@@ -300,36 +274,43 @@ impl ListBuilder {
             }),
         }
     }
+
     pub fn disable_action_updates(mut self) -> Self {
         self.update_actions = false;
         self
     }
+
     pub fn reverse(mut self) -> Self {
         self.reverse = true;
         self
     }
+
     pub fn interval(mut self, interval: Duration) -> Self {
         self.interval = Some(interval);
         self
     }
+
     pub fn filter(mut self, filter: impl FilterList + 'static) -> Self {
         self.filter = Box::new(filter);
         self
     }
+
     pub fn scroll_handler(
         mut self,
-        handler: impl FnMut(&ListScrollEvent, &mut App) + 'static,
+        handler: impl FnMut(&ListScrollEvent, &mut Window, &mut App) + 'static,
     ) -> Self {
         self.scroll_handler = Some(Box::new(handler));
         self
     }
+
     pub fn build(
         self,
         update: impl UpdateList + 'static,
         context: &mut StateViewContext,
+        window: &mut Window,
         cx: &mut App,
-    ) -> Entity<List> {
-        List::new(
+    ) -> Entity<LList> {
+        LList::new(
             Box::new(update),
             self.filter,
             self.interval,
@@ -337,24 +318,25 @@ impl ListBuilder {
             self.reverse,
             self.scroll_handler,
             context,
+            window,
             cx,
         )
     }
 }
 
 pub trait UpdateList:
-    Fn(&mut List, bool, &mut Context<List>) -> anyhow::Result<Option<Vec<Item>>>
+    Fn(&mut LList, bool, &mut Context<LList>) -> anyhow::Result<Option<Vec<Item>>>
 {
 }
 impl<F> UpdateList for F where
-    F: Fn(&mut List, bool, &mut Context<List>) -> anyhow::Result<Option<Vec<Item>>>
+    F: Fn(&mut LList, bool, &mut Context<LList>) -> anyhow::Result<Option<Vec<Item>>>
 {
 }
 
-pub trait FilterList: Fn(&mut List, &mut Context<List>) -> Vec<Item> {}
-impl<F> FilterList for F where F: Fn(&mut List, &mut Context<List>) -> Vec<Item> {}
+pub trait FilterList: Fn(&mut LList, &mut Context<LList>) -> Vec<Item> {}
+impl<F> FilterList for F where F: Fn(&mut LList, &mut Context<LList>) -> Vec<Item> {}
 
-pub struct List {
+pub struct LList {
     state: ListState,
     selected: Entity<u64>,
     pub actions: ActionsModel,
@@ -365,20 +347,18 @@ pub struct List {
     pub filter: Box<dyn FilterList>,
     preview: Option<(u64, f32, StateItem)>,
     reverse: bool,
+    sender: Sender<u64>,
 }
 
-impl Render for List {
+impl LList {}
+
+impl Render for LList {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        //let theme = cx.global::<Theme>();
+        // let theme = cx.global::<Theme>();
         let (width, preview) = self
             .preview
             .as_ref()
-            .map(|p| {
-                (
-                    relative(1.0 - p.1),
-                    div().child(p.2.view.clone()).w(relative(p.1)).pl_1(),
-                )
-            })
+            .map(|p| (relative(1.0 - p.1), div().child(p.2.view.clone()).w(relative(p.1)).pl_1()))
             .unwrap_or((relative(1.0), div()));
 
         if self.items.read(cx).is_empty() {
@@ -388,83 +368,103 @@ impl Render for List {
                 .size_full()
                 .flex()
                 .child(
-                    div()
-                        .w(width)
-                        .h_full()
-                        .relative()
-                        .child(list(self.state.clone(), ()).size_full().pr_1()),
+                    div().w(width).h_full().relative().child(
+                        list(
+                            self.state.clone(),
+                            cx.processor(|this, index: usize, window, cx| {
+                                this.render_entry(index, window, cx)
+                            }),
+                        )
+                        .size_full()
+                        .pr_1(),
+                    ),
                 )
                 .child(preview)
         }
     }
 }
 
-impl List {
+impl LList {
+    pub fn render_entry(&self, ix: usize, _: &mut Window, cx: &mut Context<LList>) -> AnyElement {
+        let selected = self.selected.clone();
+        let items = self.items.clone();
+        let sender = self.sender.clone();
+        let actions = self.actions.clone();
+        let mut item = items.read(cx)[ix].clone();
+        let selected = item.id.eq(selected.read(cx));
+        item.selected = selected;
+        let action = item.actions.first().cloned();
+        let actions = actions.inner.upgrade();
+        if actions.is_none() {
+            return div().into_any_element();
+        }
+        let actions = actions.unwrap().read(cx).clone();
+        let sender = sender.clone();
+        let id = item.id;
+        div()
+            .child(item)
+            .on_mouse_down(MouseButton::Left, {
+                move |ev, _, cx| match ev.click_count {
+                    1 => {
+                        let _ = sender.send(id);
+                    },
+                    2 => {
+                        let mut actions = actions.clone();
+                        if let Some(action) = &action {
+                            (action.action)(&mut actions, cx);
+                        }
+                    },
+                    _ => {},
+                }
+            })
+            .into_any_element()
+    }
+
     pub fn up(&mut self, cx: &mut Context<Self>) {
         if !self.query.has_focus(cx) {
             return;
         }
         let index = if let Some((index, _)) = self.selected(cx) {
-            if index > 0 {
-                index - 1
-            } else {
-                0
-            }
+            if index > 0 { index - 1 } else { 0 }
         } else {
             0
         };
 
         self.selected.update(cx, |this, cx| {
-            *this = self
-                .items
-                .read(cx)
-                .get(index)
-                .map(|item| item.id)
-                .unwrap_or(0);
+            *this = self.items.read(cx).get(index).map(|item| item.id).unwrap_or(0);
 
             cx.notify();
         });
         self.state.scroll_to_reveal_item(index);
     }
+
     pub fn down(&mut self, cx: &mut Context<Self>) {
         if !self.query.has_focus(cx) {
             return;
         }
         let index = if let Some((index, _)) = self.selected(cx) {
             let i = self.items.read(cx).len() - 1;
-            if index < i {
-                index + 1
-            } else {
-                i
-            }
+            if index < i { index + 1 } else { i }
         } else {
             0
         };
         self.selected.update(cx, |this, cx| {
-            *this = self
-                .items
-                .read(cx)
-                .get(index)
-                .map(|item| item.id)
-                .unwrap_or(0);
+            *this = self.items.read(cx).get(index).map(|item| item.id).unwrap_or(0);
             cx.notify();
         });
         self.state.scroll_to_reveal_item(index);
     }
+
     pub fn selected(&self, cx: &App) -> Option<(usize, Item)> {
         let id = self.selected.read(cx);
 
-        self.items
-            .read(cx)
-            .clone()
-            .into_iter()
-            .enumerate()
-            .find(|(_, item)| item.id.eq(id))
+        self.items.read(cx).clone().into_iter().enumerate().find(|(_, item)| item.id.eq(id))
     }
-    pub fn default_action(&self, cx: &App) -> Option<Action> {
-        self.selected(cx)
-            .and_then(|(_, item)| item.actions.first().cloned())
+
+    pub fn default_action(&self, cx: &App) -> Option<LAction> {
+        self.selected(cx).and_then(|(_, item)| item.actions.first().cloned())
     }
+
     pub fn update(&mut self, no_scroll: bool, cx: &mut Context<Self>) {
         let update_fn = std::mem::replace(&mut self.update, Box::new(|_, _, _| Ok(None)));
         let result = update_fn(self, no_scroll, cx);
@@ -473,15 +473,16 @@ impl List {
             Ok(Some(items)) => {
                 self.items_all = items;
                 self.filter(no_scroll, cx);
-            }
-            Ok(None) => {}
+            },
+            Ok(None) => {},
             Err(_err) => {
                 let _ = self.actions.inner.update(cx, |this, cx| {
                     this.toast.error("Failed to refresh list", cx);
                 });
-            }
+            },
         }
     }
+
     pub fn filter(&mut self, _no_scroll: bool, cx: &mut Context<Self>) {
         let filter_fn = std::mem::replace(&mut self.filter, Box::new(|_, _| vec![]));
         let items = filter_fn(self, cx);
@@ -511,6 +512,7 @@ impl List {
             self.reset_selection(cx);
         }
     }
+
     pub fn reset_selection(&mut self, cx: &mut Context<Self>) {
         self.items.update(cx, |items, cx| {
             if items.is_empty() {
@@ -524,12 +526,10 @@ impl List {
                 *this = items[s].id;
                 cx.notify();
             });
-            self.state.scroll_to(ListOffset {
-                item_ix: s,
-                offset_in_item: Pixels(0.0),
-            })
+            self.state.scroll_to(ListOffset { item_ix: s, offset_in_item: Pixels::from(0.0) })
         });
     }
+
     #[allow(clippy::too_many_arguments)]
     fn new(
         update: Box<dyn UpdateList>,
@@ -539,21 +539,17 @@ impl List {
         reverse: bool,
         scroll_handler: ScrollHandler,
         context: &mut StateViewContext,
+        _: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
         let (selection_sender, r) = channel::<u64>();
-        let selected = cx.new_model(|_| 0);
-        let items: Entity<Vec<Item>> = cx.new_model(|_| vec![]);
-
+        let selected = cx.new(|_| 0);
+        let items: Entity<Vec<Item>> = cx.new(|_| vec![]);
         let mut list = Self {
             state: ListState::new(
                 0,
-                if reverse {
-                    ListAlignment::Bottom
-                } else {
-                    ListAlignment::Top
-                },
-                Pixels(20.0),
+                if reverse { ListAlignment::Bottom } else { ListAlignment::Top },
+                Pixels::from(20.0),
             ),
             selected,
             items_all: vec![],
@@ -564,19 +560,18 @@ impl List {
             filter,
             preview: None,
             reverse,
+            sender: selection_sender,
         };
         if let Some(scroll_handler) = scroll_handler {
             list.state.set_scroll_handler(scroll_handler);
         };
 
         let update_receiver = context.update_receiver.clone();
-        let view = cx.new_view(move |cx| {
-            cx.observe(&list.selected, move |this: &mut List, window, cx| {
+        let view = cx.new(move |cx| {
+            cx.observe(&list.selected, move |this: &mut LList, _, cx| {
                 if let Some((_, selected)) = this.selected(cx) {
                     let preview = if let Some(preview) = selected.preview.as_ref() {
-                        if !selected
-                            .id
-                            .eq(&this.preview.as_ref().map(|p| p.0).unwrap_or_default())
+                        if !selected.id.eq(&this.preview.as_ref().map(|p| p.0).unwrap_or_default())
                         {
                             Some((selected.id, preview.0, preview.1(cx)))
                         } else {
@@ -604,13 +599,13 @@ impl List {
             })
             .detach();
 
-            cx.spawn(|view, mut cx| async move {
+            cx.spawn(async move |view, cx| {
                 let mut last = std::time::Instant::now();
                 loop {
                     if let Some(view) = view.upgrade() {
                         let poll = interval.map(|i| last.elapsed() > i).unwrap_or(false);
                         if let Ok(selected) = r.try_recv() {
-                            let _ = view.update(&mut cx, |this: &mut Self, cx| {
+                            let _ = view.update(cx, |this: &mut Self, cx| {
                                 this.selected.update(cx, |this, cx| {
                                     *this = selected;
                                     cx.notify();
@@ -624,13 +619,11 @@ impl List {
                             this.update(triggered, cx);
                             last = std::time::Instant::now();
                         };
-                        if (poll || triggered) && view.update(&mut cx, update).is_err() {
+                        if (poll || triggered) && view.update(cx, update).is_err() {
                             debug!("List view released");
                             break;
                         }
-                        cx.background_executor()
-                            .timer(Duration::from_millis(50))
-                            .await;
+                        cx.background_executor().timer(Duration::from_millis(50)).await;
                     } else {
                         debug!("List view released");
                         break;
@@ -645,69 +638,33 @@ impl List {
 
         if let Some(query) = &context.query.view.upgrade() {
             cx.subscribe(query, move |_subscriber, emitter: &TextEvent, cx| {
-                //let clone = clone.clone();
+                // let clone = clone.clone();
                 match emitter {
                     TextEvent::Input { text: _ } => {
                         clone.update(cx, |this, cx| {
                             this.filter(true, cx);
                             this.reset_selection(cx);
                         });
-                    }
+                    },
                     TextEvent::KeyDown(ev) => match ev.keystroke.key.as_str() {
                         "up" => {
                             clone.update(cx, |this, cx| {
                                 this.up(cx);
                             });
-                        }
+                        },
                         "down" => {
                             clone.update(cx, |this, cx| {
                                 this.down(cx);
                             });
-                        }
-                        _ => {}
+                        },
+                        _ => {},
                     },
-                    _ => {}
+                    _ => {},
                 }
             })
             .detach();
         }
         view
-    }
-    fn render_state(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let selected = self.selected.clone();
-        let items = self.items.clone();
-        let sender = self.selection_sender.clone();
-        let actions = context.actions.clone();
-        move |i, cx| {
-            let mut item = items.read(cx)[i].clone();
-            let selected = item.id.eq(selected.read(cx));
-            item.selected = selected;
-            let action = item.actions.first().cloned();
-            let actions = actions.inner.upgrade();
-            if actions.is_none() {
-                return div().into_any_element();
-            }
-            let actions = actions.unwrap().read(cx).clone();
-            let sender = sender.clone();
-            let id = item.id;
-            div()
-                .child(item)
-                .on_mouse_down(MouseButton::Left, {
-                    move |ev, cx| match ev.click_count {
-                        1 => {
-                            let _ = sender.send(id);
-                        }
-                        2 => {
-                            let mut actions = actions.clone();
-                            if let Some(action) = &action {
-                                (action.action)(&mut actions, cx);
-                            }
-                        }
-                        _ => {}
-                    }
-                })
-                .into_any_element()
-        }
     }
 }
 
@@ -718,11 +675,9 @@ pub struct AsyncListItems {
 
 impl AsyncListItems {
     pub fn new() -> Self {
-        Self {
-            items: HashMap::new(),
-            initialized: false,
-        }
+        Self { items: HashMap::new(), initialized: false }
     }
+
     pub fn update(&mut self, key: String, items: Vec<Item>, cx: &mut Context<Self>) {
         self.items.insert(key, items);
         if !self.initialized {
@@ -732,6 +687,7 @@ impl AsyncListItems {
         cx.emit(AsyncListItemsEvent::Update);
         cx.notify();
     }
+
     pub fn push(&mut self, key: String, item: Item, cx: &mut Context<Self>) {
         let items = self.items.entry(key).or_default();
         // check existing
@@ -746,6 +702,7 @@ impl AsyncListItems {
         cx.emit(AsyncListItemsEvent::Update);
         cx.notify();
     }
+
     pub fn remove(&mut self, key: String, id: impl Hash, cx: &mut Context<Self>) {
         if let Some(items) = self.items.get_mut(&key) {
             let hash = {
@@ -760,6 +717,7 @@ impl AsyncListItems {
             }
         }
     }
+
     pub fn loader(view: &Entity<Self>, actions: &ActionsModel, cx: &mut App) {
         if let Some(a) = actions.inner.upgrade() {
             let init = view.read(cx).initialized;
@@ -770,10 +728,10 @@ impl AsyncListItems {
                     if let Some(loader) = loader.as_mut() {
                         loader.remove();
                     }
-                }
+                },
                 AsyncListItemsEvent::Update => {
                     a.update();
-                }
+                },
             })
             .detach();
         }

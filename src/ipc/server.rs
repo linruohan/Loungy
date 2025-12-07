@@ -1,5 +1,14 @@
-use smol::io::{AsyncReadExt, AsyncWriteExt};
-use std::net::{Ipv4Addr, SocketAddr};
+use std::{
+    net::{Ipv4Addr, SocketAddr},
+    pin::Pin,
+    task::{Context, Poll},
+};
+
+use anyhow::{Error, anyhow};
+use clap::{Arg, ValueEnum, command};
+use gpui::{AsyncApp, private::serde_json};
+use serde::{Deserialize, Serialize};
+use smol::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use super::{SOCKET_PATH, SOCKET_PORT};
 use crate::{
@@ -7,14 +16,7 @@ use crate::{
     state::{Actions, StateModel},
     window::LWindow,
 };
-use anyhow::{anyhow, Error};
-use clap::{command, Arg, ValueEnum};
-use gpui::{AsyncWindowContext, Window};
-use serde::{Deserialize, Serialize};
-#[cfg(unix)]
-use smol::net::unix::{UnixListener, UnixStream};
-#[cfg(windows)]
-use smol::net::{TcpListener, TcpStream};
+
 // 平台无关的监听器枚举
 pub enum PlatformListener {
     #[cfg(unix)]
@@ -29,16 +31,13 @@ impl PlatformListener {
             #[cfg(unix)]
             PlatformListener::Unix(listener) => {
                 let (stream, _) = listener.accept().await?;
-                Ok((
-                    PlatformStream::Unix(stream),
-                    SocketAddr::from(([127, 0, 0, 1], 0)),
-                ))
-            }
+                Ok((PlatformStream::Unix(stream), SocketAddr::from(([127, 0, 0, 1], 0))))
+            },
             #[cfg(windows)]
             PlatformListener::Tcp(listener) => {
                 let (stream, addr) = listener.accept().await?;
                 Ok((PlatformStream::Tcp(stream), addr))
-            }
+            },
         }
     }
 }
@@ -50,12 +49,68 @@ pub enum PlatformStream {
     #[cfg(windows)]
     Tcp(smol::net::TcpStream),
 }
-fn extract_port_from_path(path: &str) -> Option<u16> {
-    if path.starts_with("/") {
-        path.split('/').last()?.parse().ok()
-    } else {
-        path.parse().ok()
+// 为 PlatformStream 实现 AsyncRead
+impl AsyncRead for PlatformStream {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<std::io::Result<usize>> {
+        match &mut *self {
+            #[cfg(unix)]
+            PlatformStream::Unix(stream) => Pin::new(stream).poll_read(cx, buf),
+            #[cfg(windows)]
+            PlatformStream::Tcp(stream) => Pin::new(stream).poll_read(cx, buf),
+        }
     }
+}
+
+// 为 PlatformStream 实现 AsyncWrite
+impl AsyncWrite for PlatformStream {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<std::io::Result<usize>> {
+        match &mut *self {
+            #[cfg(unix)]
+            PlatformStream::Unix(stream) => Pin::new(stream).poll_write(cx, buf),
+            #[cfg(windows)]
+            PlatformStream::Tcp(stream) => Pin::new(stream).poll_write(cx, buf),
+        }
+    }
+
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        match &mut *self {
+            #[cfg(unix)]
+            PlatformStream::Unix(stream) => Pin::new(stream).poll_flush(cx),
+            #[cfg(windows)]
+            PlatformStream::Tcp(stream) => Pin::new(stream).poll_flush(cx),
+        }
+    }
+
+    fn poll_close(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<std::io::Result<()>> {
+        match &mut *self {
+            #[cfg(unix)]
+            PlatformStream::Unix(stream) => Pin::new(stream).poll_close(cx),
+            #[cfg(windows)]
+            PlatformStream::Tcp(stream) => Pin::new(stream).poll_close(cx),
+        }
+    }
+}
+
+impl PlatformStream {
+    async fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
+        AsyncReadExt::read(self, buf).await.map_err(Into::into)
+    }
+
+    async fn write_all(&mut self, buf: &[u8]) -> Result<(), Error> {
+        AsyncWriteExt::write_all(self, buf).await.map_err(Into::into)
+    }
+}
+
+fn extract_port_from_path(path: &str) -> Option<u16> {
+    if path.starts_with("/") { path.split('/').last()?.parse().ok() } else { path.parse().ok() }
 }
 pub async fn setup_socket() -> anyhow::Result<PlatformListener> {
     #[cfg(unix)]
@@ -91,22 +146,26 @@ pub async fn setup_socket() -> anyhow::Result<PlatformListener> {
         Ok(PlatformListener::Tcp(listener))
     }
 }
-pub async fn start_server(
-    listener: PlatformListener,
-    mut cx: AsyncWindowContext,
-) -> anyhow::Result<()> {
+pub async fn start_server(listener: PlatformListener, cx: &mut AsyncApp) -> anyhow::Result<()> {
     let commands = cx.read_global::<RootCommands, _>(|commands, _| commands.clone())?;
     loop {
         let (stream, _) = listener.accept().await?;
-        cx.spawn(|cx| handle_client(stream, commands.clone(), cx))
-            .detach();
+        let cx = cx.clone();
+        let commands = commands.clone();
+
+        cx.spawn(async move |cx| {
+            if let Err(e) = handle_client(stream, commands, cx).await {
+                log::error!("Client handling error: {}", e);
+            }
+        })
+        .detach();
     }
 }
 
 async fn handle_client(
     mut stream: PlatformStream,
     commands: RootCommands,
-    mut cx: AsyncWindowContext,
+    cx: &mut AsyncApp,
 ) -> anyhow::Result<()> {
     // Send available commands to the client
     let bytes = serde_json::to_vec(&commands)?;
@@ -117,20 +176,20 @@ async fn handle_client(
 
     let matches: CommandPayload = serde_json::from_slice(&buf[..n])?;
 
-    let _ = cx.update::<anyhow::Result<()>>(|window, cx| {
+    let _ = cx.update::<anyhow::Result<()>>(|cx| {
         match matches.action {
             TopLevelCommand::Toggle => {
                 LWindow::toggle(cx);
-            }
+            },
             TopLevelCommand::Show => {
                 LWindow::open(cx);
-            }
+            },
             TopLevelCommand::Hide => {
                 LWindow::close(cx);
-            }
+            },
             TopLevelCommand::Quit => {
                 cx.quit();
-            }
+            },
             TopLevelCommand::Command => {
                 let Some(c) = matches.command else {
                     return Err(anyhow!("No command provided"));
@@ -160,8 +219,8 @@ async fn handle_client(
                 } else {
                     LWindow::toggle(cx);
                 }
-            }
-            TopLevelCommand::Pipe => {}
+            },
+            TopLevelCommand::Pipe => {},
         }
         Ok(())
     });
@@ -205,18 +264,16 @@ pub fn get_command(commands: &RootCommands) -> clap::Command {
                 .required(true),
         )
         .arg(
-            Arg::new("Command")
-                .required_if_eq("Action", TopLevelCommand::Command)
-                .value_parser(
-                    commands
-                        .commands
-                        .keys()
-                        .map(|key| {
-                            let split = key.split("::").collect::<Vec<_>>();
-                            split[2].to_string()
-                        })
-                        .collect::<Vec<_>>(),
-                ),
+            Arg::new("Command").required_if_eq("Action", TopLevelCommand::Command).value_parser(
+                commands
+                    .commands
+                    .keys()
+                    .map(|key| {
+                        let split = key.split("::").collect::<Vec<_>>();
+                        split[2].to_string()
+                    })
+                    .collect::<Vec<_>>(),
+            ),
         )
         .arg(
             Arg::new("Delimeter")

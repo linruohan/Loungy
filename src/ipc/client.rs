@@ -1,8 +1,9 @@
-use super::server::{get_command, CommandPayload, TopLevelCommand};
-use crate::commands::RootCommands;
-use crate::ipc::SOCKET_PATH;
 use clap::Command;
+use gpui::private::serde_json;
 use smol::io::{AsyncReadExt, AsyncWriteExt};
+
+use super::server::{CommandPayload, TopLevelCommand, get_command};
+use crate::{commands::RootCommands, ipc::SOCKET_PATH};
 
 pub async fn client_connect() -> anyhow::Result<()> {
     #[cfg(unix)]
@@ -15,11 +16,7 @@ pub async fn client_connect() -> anyhow::Result<()> {
     let mut stream = {
         use smol::net::TcpStream;
         // Windows 上使用 TCP 替代 Unix 套接字
-        let port = if SOCKET_PATH.starts_with("/") {
-            &SOCKET_PATH[1..]
-        } else {
-            SOCKET_PATH
-        };
+        let port = if SOCKET_PATH.starts_with("/") { &SOCKET_PATH[1..] } else { SOCKET_PATH };
         TcpStream::connect(format!("127.0.0.1:{}", port)).await?
     };
     let mut buf = vec![0; 8096];

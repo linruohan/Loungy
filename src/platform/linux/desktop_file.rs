@@ -1,17 +1,15 @@
-/*
- *
- *  This source file is part of the Loungy open source project
- *
- *  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
- *  Licensed under MIT License
- *
- *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
- *
- */
+//  This source file is part of the Loungy open source project
+//
+//  Copyright (c) 2024 Loungy, Matthias Grandl and the Loungy project contributors
+//  Licensed under MIT License
+//
+//  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
+//
 
-use freedesktop_entry_parser::{parse_entry, AttrSelector};
-use freedesktop_icons::lookup;
 use std::path::PathBuf;
+
+use freedesktop_entry_parser::{AttrSelector, parse_entry};
+use freedesktop_icons::lookup;
 
 pub(crate) struct ApplicationDesktopFile {
     pub name: String,
@@ -41,10 +39,8 @@ impl TryFrom<&PathBuf> for ApplicationDesktopFile {
         let entry = parse_entry(value).map_err(|_| DesktopFileError::InvalidFormat)?;
 
         let content_section: AttrSelector<&str> = entry.section("Desktop Entry");
-        let name = content_section
-            .attr("Name")
-            .ok_or(DesktopFileError::NoDesktopEntry)?
-            .to_string();
+        let name =
+            content_section.attr("Name").ok_or(DesktopFileError::NoDesktopEntry)?.to_string();
 
         let icon = content_section.attr("Icon").map(|s| s.to_string());
 
@@ -64,10 +60,6 @@ impl TryFrom<&PathBuf> for ApplicationDesktopFile {
             return Err(DesktopFileError::HiddenFile);
         }
 
-        Ok(ApplicationDesktopFile {
-            name,
-            icon,
-            keywords,
-        })
+        Ok(ApplicationDesktopFile { name, icon, keywords })
     }
 }
