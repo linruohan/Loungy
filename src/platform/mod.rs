@@ -19,9 +19,13 @@ pub use linux::*;
 use std::path::PathBuf;
 #[cfg(target_os = "macos")]
 mod mac;
+#[cfg(target_os = "windows")]
+mod window;
+
 #[cfg(target_os = "macos")]
 pub use mac::*;
-
+#[cfg(target_os = "windows")]
+pub use window::*;
 #[derive(Clone)]
 pub struct AppData {
     pub id: String,

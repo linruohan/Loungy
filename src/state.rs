@@ -27,7 +27,7 @@ use crate::{
     },
     query::{TextEvent, TextInput, TextInputWeak},
     theme::{self, Theme},
-    window::{Window, WindowStyle},
+    window::{LWindow, LWindowStyle},
 };
 
 pub struct LazyMutex<T> {
@@ -272,9 +272,9 @@ impl Toast {
                 height: Pixels::from(1080.0),
             },
         });
-        Window::close(cx);
+        LWindow::close(cx);
         let _ = cx.open_window(
-            WindowStyle::Toast {
+            LWindowStyle::Toast {
                 width: message.to_string().len() as u32 * 12,
                 height: 50,
             }
@@ -380,7 +380,7 @@ impl StateItem {
                 });
 
                 if ev.keystroke.key.as_str() == "escape" {
-                    Window::close(cx);
+                    LWindow::close(cx);
                 }
             }
             TextEvent::Back => {
@@ -672,7 +672,7 @@ pub trait ActionFn: Fn(&mut Actions, &mut WindowContext) + 'static {}
 impl<F> ActionFn for F where F: Fn(&mut Actions, &mut WindowContext) + 'static {}
 
 #[derive(Clone, IntoElement)]
-pub struct Action {
+pub struct LAction {
     pub label: SharedString,
     pub shortcut: Option<Shortcut>,
     pub image: Img,
@@ -680,7 +680,7 @@ pub struct Action {
     pub hide: bool,
 }
 
-impl RenderOnce for Action {
+impl RenderOnce for LAction {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
         let shortcut = if let Some(shortcut) = self.shortcut {
             div().child(shortcut)
@@ -697,7 +697,7 @@ impl RenderOnce for Action {
     }
 }
 
-impl Action {
+impl LAction {
     pub fn new(
         image: Img,
         label: impl ToString,
@@ -770,8 +770,8 @@ impl Render for Dropdown {
 
 #[derive(Clone)]
 pub struct Actions {
-    global: Model<Vec<Action>>,
-    local: Model<Vec<Action>>,
+    global: Model<Vec<LAction>>,
+    local: Model<Vec<LAction>>,
     pub active: Option<StateItem>,
     meta: Option<AnyModel>,
     show: bool,
@@ -804,13 +804,13 @@ impl Actions {
         let (s, _) = crossbeam_channel::unbounded::<bool>();
         Self::new(s, cx)
     }
-    fn combined(&self, cx: &WindowContext) -> Vec<Action> {
+    fn combined(&self, cx: &WindowContext) -> Vec<LAction> {
         let mut combined = self.local.read(cx).clone();
         combined.append(&mut self.global.read(cx).clone());
         if let Some(action) = combined.get_mut(0) {
             let key = "enter";
             action.shortcut = Some(Shortcut::new(key));
-            combined.push(Action::new(
+            combined.push(LAction::new(
                 Img::default().icon(Icon::BookOpen),
                 "Actions",
                 Some(Shortcut::new("k").cmd()),
@@ -882,7 +882,7 @@ impl Actions {
                     .text_sm(),
             )
     }
-    fn check(&self, keystroke: &Keystroke, cx: &WindowContext) -> Option<Action> {
+    fn check(&self, keystroke: &Keystroke, cx: &WindowContext) -> Option<LAction> {
         let actions = self.combined(cx);
         for action in actions {
             if let Some(shortcut) = &action.shortcut {
@@ -1072,7 +1072,7 @@ impl ActionsModel {
         });
         (model, inner)
     }
-    pub fn update_global(&self, actions: Vec<Action>, cx: &mut WindowContext) {
+    pub fn update_global(&self, actions: Vec<LAction>, cx: &mut WindowContext) {
         let _ = self.inner.update(cx, |model, cx| {
             model.global.update(cx, |this, cx| {
                 *this = actions;
@@ -1083,7 +1083,7 @@ impl ActionsModel {
     }
     pub fn update_local(
         &self,
-        actions: Vec<Action>,
+        actions: Vec<LAction>,
         item: Option<StateItem>,
         meta: Option<AnyModel>,
         cx: &mut WindowContext,

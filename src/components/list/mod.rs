@@ -25,7 +25,7 @@ use log::debug;
 use crate::{
     loader::Loader,
     query::{TextEvent, TextInputWeak},
-    state::{Action, ActionsModel, Shortcut, StateItem, StateViewContext},
+    state::{ActionsModel, LAction, Shortcut, StateItem, StateViewContext},
     theme::Theme,
 };
 
@@ -150,7 +150,7 @@ pub trait ItemComponent {
 pub struct ItemBuilder {
     id: u64,
     preview: Option<(f32, Rc<dyn Preview>)>,
-    actions: Vec<Action>,
+    actions: Vec<LAction>,
     weight: Option<u16>,
     keywords: Vec<SharedString>,
     component: Rc<dyn ItemComponent>,
@@ -186,7 +186,7 @@ impl ItemBuilder {
         self.keywords = keywords.into_iter().map(|k| k.to_string().into()).collect();
         self
     }
-    pub fn actions(mut self, actions: Vec<Action>) -> Self {
+    pub fn actions(mut self, actions: Vec<LAction>) -> Self {
         self.actions = actions;
         self
     }
@@ -225,7 +225,7 @@ pub enum ItemPreset {
 pub struct Item {
     id: u64,
     preview: Option<(f32, Rc<dyn Preview>)>,
-    actions: Vec<Action>,
+    actions: Vec<LAction>,
     weight: Option<u16>,
     keywords: Vec<SharedString>,
     component: Rc<dyn ItemComponent>,
@@ -457,7 +457,7 @@ impl List {
             .enumerate()
             .find(|(_, item)| item.id.eq(id))
     }
-    pub fn default_action(&self, cx: &AppContext) -> Option<Action> {
+    pub fn default_action(&self, cx: &AppContext) -> Option<LAction> {
         self.selected(cx)
             .and_then(|(_, item)| item.actions.first().cloned())
     }

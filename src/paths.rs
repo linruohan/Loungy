@@ -27,6 +27,9 @@ impl Paths {
         let user_dir = PathBuf::from("/Users").join(username.clone());
         #[cfg(target_os = "linux")]
         let user_dir = PathBuf::from("/home").join(username.clone());
+        #[cfg(target_os = "windows")]
+        let user_dir = PathBuf::from("C:\\Users").join(username.clone());
+        let user_dir_str = user_dir.to_string_lossy().to_string();
         Self {
             #[cfg(target_os = "macos")]
             path_env: format!(
@@ -38,9 +41,16 @@ impl Paths {
                 "/opt/homebrew/bin:/usr/local/bin:/home/{}/.nix-profile/bin",
                 username
             ),
+            #[cfg(target_os = "windows")]
+            path_env: format!(
+                "C:\\Windows\\System32;C:\\Windows;{}\\.cargo\\bin;{}\\.local\\bin",
+                user_dir_str, user_dir_str
+            ),
             #[cfg(target_os = "macos")]
             cache: user_dir.clone().join("Library/Caches").join(NAME),
             #[cfg(target_os = "linux")]
+            cache: user_dir.clone().join(".cache").join(NAME),
+            #[cfg(target_os = "windows")]
             cache: user_dir.clone().join(".cache").join(NAME),
             config: user_dir.clone().join(".config").join(NAME),
             #[cfg(target_os = "macos")]
@@ -50,6 +60,11 @@ impl Paths {
                 .join(NAME),
             #[cfg(target_os = "linux")]
             data: user_dir.clone().join(".local/share").join(NAME),
+            #[cfg(target_os = "windows")]
+            data: user_dir
+                .clone()
+                .join("Library/Application Support")
+                .join(NAME),
         }
     }
 }

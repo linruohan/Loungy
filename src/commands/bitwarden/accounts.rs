@@ -24,7 +24,7 @@ use crate::{
         list::{Accessory, Item, ItemBuilder, ListBuilder, ListItem},
         shared::{Icon, Img},
     },
-    state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
 };
 
 use super::list::{db, BitwardenAccount};
@@ -222,7 +222,7 @@ impl StateViewBuilder for BitwardenAccountListBuilder {
     fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
         context.query.set_placeholder("Search your accounts...", cx);
         context.actions.update_global(
-            vec![Action::new(
+            vec![LAction::new(
                 Img::default().icon(Icon::PlusSquare),
                 "Add Account",
                 Some(Shortcut::new("n").cmd()),
@@ -255,7 +255,7 @@ impl StateViewBuilder for BitwardenAccountListBuilder {
                             })
                             .keywords(vec![account.id.clone()])
                             .actions(vec![
-                                Action::new(
+                                LAction::new(
                                     Img::default().icon(Icon::Pen),
                                     "Edit",
                                     None,
@@ -267,7 +267,7 @@ impl StateViewBuilder for BitwardenAccountListBuilder {
                                     },
                                     false,
                                 ),
-                                Action::new(
+                                LAction::new(
                                     Img::default().icon(Icon::Delete),
                                     "Delete",
                                     None,

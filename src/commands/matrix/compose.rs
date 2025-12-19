@@ -18,7 +18,7 @@ use matrix_sdk_ui::{timeline::EventTimelineItem, Timeline};
 use crate::{
     command,
     components::shared::{Icon, Img, NoView},
-    state::{Action, CommandTrait, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, StateViewBuilder, StateViewContext},
 };
 
 #[derive(Clone)]
@@ -71,7 +71,7 @@ impl StateViewBuilder for Compose {
         let self_clone = self.clone();
 
         context.actions.update_global(
-            vec![Action::new(
+            vec![LAction::new(
                 Img::default().icon(Icon::Send),
                 "Send Message",
                 None,

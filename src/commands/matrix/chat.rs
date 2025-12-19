@@ -45,7 +45,7 @@ use crate::{
     date::format_date,
     loader::Loader,
     state::{
-        Action, CommandTrait, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
+        CommandTrait, LAction, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
     },
     theme::Theme,
 };
@@ -149,8 +149,8 @@ pub(super) struct Message {
 }
 
 impl Message {
-    fn actions(&self, timeline: Arc<Timeline>, room: Arc<Room>) -> Vec<Action> {
-        let mut actions = vec![Action::new(
+    fn actions(&self, timeline: Arc<Timeline>, room: Arc<Room>) -> Vec<LAction> {
+        let mut actions = vec![LAction::new(
             Img::default().icon(Icon::MessageCircleReply),
             "Reply",
             Some(Shortcut::new("r").cmd()),
@@ -170,7 +170,7 @@ impl Message {
         )];
         if self.me {
             actions.append(&mut vec![
-                Action::new(
+                LAction::new(
                     Img::default().icon(Icon::MessageCircleMore),
                     "Edit",
                     Some(Shortcut::new("e").cmd()),
@@ -188,7 +188,7 @@ impl Message {
                     },
                     false,
                 ),
-                Action::new(
+                LAction::new(
                     Img::default().icon(Icon::MessageCircleDashed),
                     "Delete",
                     Some(Shortcut::new("backspace").cmd()),

@@ -24,7 +24,7 @@ use crate::{
     },
     date::format_date,
     paths::paths,
-    state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
     theme::Theme,
 };
 
@@ -114,7 +114,7 @@ impl StateViewBuilder for TailscaleListBuilder {
                                     ),
                                 )
                                 .actions(vec![
-                                    Action::new(
+                                    LAction::new(
                                         Img::default().icon(Icon::ArrowUpRightFromSquare),
                                         "Open",
                                         None,
@@ -128,7 +128,7 @@ impl StateViewBuilder for TailscaleListBuilder {
                                         },
                                         false,
                                     ),
-                                    Action::new(
+                                    LAction::new(
                                         Img::default().icon(Icon::Clipboard),
                                         "Copy IPv4",
                                         Some(Shortcut::new("c").cmd()),
@@ -147,7 +147,7 @@ impl StateViewBuilder for TailscaleListBuilder {
                                         },
                                         false,
                                     ),
-                                    Action::new(
+                                    LAction::new(
                                         Img::default().icon(Icon::Clipboard),
                                         "Copy IPv6",
                                         Some(Shortcut::new("c").cmd().shift()),

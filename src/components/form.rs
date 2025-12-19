@@ -16,7 +16,7 @@ use gpui::*;
 use crate::{
     components::shared::{Icon, Img},
     query::{TextEvent, TextInputWeak},
-    state::{Action, Actions, Shortcut, StateViewContext},
+    state::{Actions, LAction, Shortcut, StateViewContext},
     theme::Theme,
 };
 
@@ -407,7 +407,7 @@ impl Form {
 
         if let Some(inner) = context.actions.inner.upgrade() {
             context.actions.update_local(
-                vec![Action::new(
+                vec![LAction::new(
                     Img::default().icon(Icon::PlusSquare),
                     "Submit",
                     None,

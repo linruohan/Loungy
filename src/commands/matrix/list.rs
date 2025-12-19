@@ -25,7 +25,7 @@ use crate::{
         shared::{Icon, Img, ImgMask},
     },
     state::{
-        Action, CommandTrait, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
+        CommandTrait, LAction, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
     },
 };
 
@@ -184,7 +184,7 @@ async fn sync(
             )
             .keywords(vec![name.clone()])
             .actions(vec![
-                Action::new(
+                LAction::new(
                     Img::default().icon(Icon::MessageCircle),
                     "Write",
                     None,
@@ -201,7 +201,7 @@ async fn sync(
                     },
                     false,
                 ),
-                Action::new(
+                LAction::new(
                     Img::default().icon(Icon::Search),
                     "Search",
                     Some(Shortcut::new("/").cmd()),

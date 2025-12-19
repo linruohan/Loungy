@@ -1,16 +1,28 @@
-use async_std::{io::ReadExt, io::WriteExt, os::unix::net::UnixStream};
 use clap::Command;
+use gpui::private::serde_json;
+use smol::io::{AsyncReadExt, AsyncWriteExt};
 
-use crate::commands::RootCommands;
-
-use super::{
-    server::{get_command, CommandPayload, TopLevelCommand},
-    SOCKET_PATH,
-};
+use super::server::{get_command, CommandPayload, TopLevelCommand};
+use crate::{commands::RootCommands, ipc::SOCKET_PATH};
 
 pub async fn client_connect() -> anyhow::Result<()> {
-    let mut stream = UnixStream::connect(SOCKET_PATH).await?;
+    #[cfg(unix)]
+    let mut stream = {
+        use smol::net::unix::UnixStream;
+        UnixStream::connect(Path::new(SOCKET_PATH)).await?
+    };
 
+    #[cfg(windows)]
+    let mut stream = {
+        use smol::net::TcpStream;
+        // Windows 上使用 TCP 替代 Unix 套接字
+        let port = if SOCKET_PATH.starts_with("/") {
+            &SOCKET_PATH[1..]
+        } else {
+            SOCKET_PATH
+        };
+        TcpStream::connect(format!("127.0.0.1:{}", port)).await?
+    };
     let mut buf = vec![0; 8096];
     let n = stream.read(&mut buf).await?;
     let root_commands: RootCommands = serde_json::from_slice(&buf[..n])?;

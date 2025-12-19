@@ -68,11 +68,7 @@ impl Db {
             .expect("Failed to open database")
     }
     pub fn get<T: de::DeserializeOwned>(&self, id: &str) -> Option<T> {
-        if let Ok(value) = self.inner.get_key(id).into() {
-            value
-        } else {
-            None
-        }
+        self.inner.get_key(id).into().unwrap_or_default()
     }
     pub fn set<T: Serialize + Send + Sync>(
         &self,

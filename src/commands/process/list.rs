@@ -25,7 +25,7 @@ use crate::{
     },
     paths::paths,
     platform::{get_application_data, AppData},
-    state::{Action, CommandTrait, StateModel, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, StateModel, StateViewBuilder, StateViewContext},
     theme::Theme,
 };
 
@@ -143,7 +143,7 @@ impl StateViewBuilder for ProcessListBuilder {
                                 let data =
                                     get_application_data(&PathBuf::from(path)).unwrap_or(AppData {
                                         id: "".to_string(),
-                                        name: p.name.split('/').last().unwrap().to_string(),
+                                        name: p.name.split('/').next_back().unwrap().to_string(),
                                         icon: Img::default().icon(Icon::Cpu),
                                         icon_path: PathBuf::new(),
                                         keywords: vec![],
@@ -184,7 +184,7 @@ impl StateViewBuilder for ProcessListBuilder {
                                     )
                                 })
                                 .keywords(vec![data.name.clone()])
-                                .actions(vec![Action::new(
+                                .actions(vec![LAction::new(
                                     Img::default().icon(Icon::Skull),
                                     "Kill Process",
                                     None,

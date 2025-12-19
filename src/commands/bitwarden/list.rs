@@ -35,7 +35,7 @@ use crate::{
     db::Db,
     paths::paths,
     platform::{autofill, close_and_paste},
-    state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
     window::Window,
 };
 
@@ -63,7 +63,7 @@ impl StateViewBuilder for BitwardenListBuilder {
         }
 
         context.actions.update_global(
-            vec![Action::new(
+            vec![LAction::new(
                 Img::default().icon(Icon::UserSearch),
                 "List Accounts",
                 Some(Shortcut::new(",").cmd()),
@@ -127,10 +127,10 @@ impl BitwardenLoginItem {
             _ => panic!("Unknown field {}", field),
         }
     }
-    pub fn get_action(&self, field: &str) -> Action {
+    pub fn get_action(&self, field: &str) -> LAction {
         let (label, img, shortcut) = self.get_label(field);
         let field = field.to_string();
-        Action::new(
+        LAction::new(
             img,
             label,
             Some(shortcut),
@@ -144,7 +144,7 @@ impl BitwardenLoginItem {
             false,
         )
     }
-    pub fn get_actions(&self) -> Vec<Action> {
+    pub fn get_actions(&self) -> Vec<LAction> {
         self.fields()
             .iter()
             .map(|field| self.get_action(field))
@@ -457,7 +457,7 @@ impl RootCommandBuilder for BitwardenCommandBuilder {
                                     &mut login.uris.iter().map(|uri| uri.uri.clone()).collect(),
                                 );
                                 let meta = EntryModel::new(&account, &item_clone, &mut cx);
-                                let mut actions = vec![Action::new(
+                                let mut actions = vec![LAction::new(
                                     Img::default().icon(Icon::PaintBucket),
                                     "Autofill",
                                     None,
@@ -536,7 +536,7 @@ impl RootCommandBuilder for BitwardenCommandBuilder {
                                 });
 
                                 if let Some(url) = url {
-                                    actions.push(Action::new(
+                                    actions.push(LAction::new(
                                         Img::default().icon(Icon::Globe),
                                         "Open",
                                         Some(Shortcut::new("o").cmd()),

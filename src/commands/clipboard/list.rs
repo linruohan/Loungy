@@ -47,7 +47,7 @@ use crate::{
         AppData, ClipboardWatcher,
     },
     state::{
-        Action, CommandTrait, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
+        CommandTrait, LAction, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
     },
     theme::Theme,
 };
@@ -64,7 +64,7 @@ impl StateViewBuilder for ClipboardListBuilder {
             .set_placeholder("Search your clipboard history...", cx);
 
         context.actions.update_global(
-            vec![Action::new(
+            vec![LAction::new(
                 Img::default().icon(Icon::Trash),
                 "Delete All",
                 None,
@@ -248,7 +248,7 @@ impl ClipboardListItem {
         })
         .actions({
             let mut actions = vec![
-                Action::new(
+                LAction::new(
                     Img::default().icon(Icon::ClipboardPaste),
                     "Paste",
                     None,
@@ -271,7 +271,7 @@ impl ClipboardListItem {
                     },
                     false,
                 ),
-                Action::new(
+                LAction::new(
                     Img::default().icon(Icon::Trash),
                     "Delete",
                     None,
@@ -295,7 +295,7 @@ impl ClipboardListItem {
             match self.kind.clone() {
                 ClipboardListItemKind::Image { thumbnail } => actions.insert(
                     1,
-                    Action::new(
+                    LAction::new(
                         Img::default().icon(Icon::ScanEye),
                         "Copy Text to Clipboard",
                         Some(Shortcut::new("enter").shift()),
@@ -313,7 +313,7 @@ impl ClipboardListItem {
                 ),
                 ClipboardListItemKind::Url { url } => actions.insert(
                     1,
-                    Action::new(
+                    LAction::new(
                         Img::default().icon(Icon::ArrowUpRightFromSquare),
                         "Open",
                         Some(Shortcut::new("enter").shift()),

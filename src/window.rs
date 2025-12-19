@@ -18,19 +18,19 @@ use crate::{components::shared::NoView, state::StateModel, theme::Theme};
 pub static WIDTH: u32 = 800;
 pub static HEIGHT: u32 = 450;
 
-pub enum WindowStyle {
+pub enum LWindowStyle {
     Main,
     Toast { width: u32, height: u32 },
     Settings,
 }
 
-impl WindowStyle {
+impl LWindowStyle {
     pub fn options(&self, bounds: Bounds<Pixels>) -> WindowOptions {
         let mut options = WindowOptions::default();
         let center = bounds.center();
 
         let (width, height, x, y) = match self {
-            WindowStyle::Main => {
+            LWindowStyle::Main => {
                 options.focus = true;
                 let width = Pixels::from(WIDTH);
                 let height = Pixels::from(HEIGHT);
@@ -38,7 +38,7 @@ impl WindowStyle {
                 let y: Pixels = center.y - height / 2.0;
                 (width, height, x, y)
             }
-            WindowStyle::Toast { width, height } => {
+            LWindowStyle::Toast { width, height } => {
                 options.focus = false;
                 let width = Pixels::from(*width);
                 let height = Pixels::from(*height);
@@ -46,7 +46,7 @@ impl WindowStyle {
                 let y: Pixels = bounds.bottom() - height - Pixels::from(200.0);
                 (width, height, x, y)
             }
-            WindowStyle::Settings => {
+            LWindowStyle::Settings => {
                 return options;
             }
         };
@@ -61,19 +61,19 @@ impl WindowStyle {
     }
 }
 
-pub struct Window {
+pub struct LWindow {
     inner: View<NoView>,
     hidden: bool,
 }
 
-impl Window {
+impl LWindow {
     pub fn init(cx: &mut WindowContext) {
         let view = cx.new_view(|cx| {
             cx.observe_window_activation(|_, cx| {
                 if cx.is_window_active() {
                     return;
                 };
-                Window::close(cx);
+                LWindow::close(cx);
             })
             .detach();
             cx.observe_window_appearance(|_, cx| {
@@ -144,4 +144,4 @@ impl Window {
     }
 }
 
-impl Global for Window {}
+impl Global for LWindow {}

@@ -26,7 +26,7 @@ use crate::{
     commands::{RootCommand, RootCommands},
     db::Db,
     state::{Actions, StateModel},
-    window::Window,
+    window::LWindow,
 };
 
 pub struct HotkeyManager {
@@ -83,12 +83,12 @@ impl HotkeyManager {
                                         cx,
                                     );
                                     (command.action)(&mut Actions::default(cx), cx);
-                                    Window::open(cx);
+                                    LWindow::open(cx);
                                 } else {
-                                    Window::toggle(cx);
+                                    LWindow::toggle(cx);
                                 }
                             } else {
-                                Window::toggle(cx);
+                                LWindow::toggle(cx);
                             }
                         });
                     }

@@ -21,7 +21,7 @@ use crate::{
         shared::{Icon, Img},
     },
     db::db,
-    state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
     theme::{Theme, ThemeSettings},
 };
 
@@ -52,7 +52,7 @@ impl StateViewBuilder for ThemeListBuilder {
                                 )
                                 .keywords(vec![theme.name.clone()])
                                 .actions(vec![
-                                    Action::new(
+                                    LAction::new(
                                         Img::default().icon(Icon::Palette),
                                         "Select Theme",
                                         None,
@@ -76,7 +76,7 @@ impl StateViewBuilder for ThemeListBuilder {
                                         },
                                         false,
                                     ),
-                                    Action::new(
+                                    LAction::new(
                                         Img::default().icon(Icon::Sun),
                                         "Default Light Theme",
                                         Some(Shortcut::new("l").cmd()),
@@ -100,7 +100,7 @@ impl StateViewBuilder for ThemeListBuilder {
                                         },
                                         false,
                                     ),
-                                    Action::new(
+                                    LAction::new(
                                         Img::default().icon(Icon::Moon),
                                         "Default Dark Theme",
                                         Some(Shortcut::new("d").cmd()),

@@ -9,12 +9,6 @@
  *
  */
 
-use std::{collections::HashMap, time::Duration};
-
-use gpui::*;
-use notify::Watcher;
-use notify_debouncer_full::new_debouncer;
-
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder, RootCommands},
@@ -23,9 +17,13 @@ use crate::{
         shared::{Icon, Img},
     },
     platform::{get_application_data, get_application_files, get_application_folders},
-    state::{Action, CommandTrait, StateViewBuilder, StateViewContext},
-    window::Window,
+    state::{CommandTrait, LAction, StateViewBuilder, StateViewContext},
+    window::LWindow,
 };
+use gpui::*;
+use notify::Watcher;
+use notify_debouncer_full::new_debouncer;
+use std::{collections::HashMap, time::Duration};
 
 use super::numbat::{Numbat, NumbatWrapper};
 
@@ -59,7 +57,7 @@ impl StateViewBuilder for RootListBuilder {
                                     inner: numbat.clone(),
                                 },
                             )
-                            .actions(vec![Action::new(
+                            .actions(vec![LAction::new(
                                 Img::default().icon(Icon::Copy),
                                 "Copy",
                                 None,
@@ -73,7 +71,7 @@ impl StateViewBuilder for RootListBuilder {
                                             Some(Icon::Clipboard),
                                             cx,
                                         );
-                                        Window::close(cx);
+                                        LWindow::close(cx);
                                     }
                                 },
                                 false,
@@ -108,18 +106,19 @@ impl StateViewBuilder for RootListBuilder {
                                 ),
                             )
                             .keywords(vec![data.name.clone()])
-                            .actions(vec![Action::new(
+                            .actions(vec![LAction::new(
                                 Img::default().icon(Icon::ArrowUpRightFromSquare),
                                 format!("Open {}", data.tag.clone()),
                                 None,
                                 {
                                     let id = data.id.clone();
+                                    let tag = data.tag.clone();
 
                                     #[cfg(target_os = "macos")]
                                     {
                                         let ex = data.tag == "System Setting";
                                         move |_, cx| {
-                                            Window::close(cx);
+                                            LWindow::close(cx);
                                             let id = id.clone();
                                             let mut command = std::process::Command::new("open");
                                             if ex {
@@ -137,11 +136,62 @@ impl StateViewBuilder for RootListBuilder {
                                     #[cfg(target_os = "linux")]
                                     {
                                         move |_, cx| {
-                                            Window::close(cx);
+                                            LWindow::close(cx);
                                             let mut command =
                                                 std::process::Command::new("gtk-launch");
                                             command.arg(id.clone());
                                             let _ = command.spawn();
+                                        }
+                                    }
+                                    #[cfg(target_os = "windows")]
+                                    {
+                                        let is_system_setting = tag == "System Setting";
+                                        let is_app_id =
+                                            id.contains(':') || id.starts_with("ms-settings:");
+                                        let id_clone = id.clone();
+
+                                        move |_, cx| {
+                                            LWindow::close(cx);
+
+                                            let path_exists =
+                                                std::path::Path::new(&id_clone).exists();
+                                            let result = if is_system_setting || is_app_id {
+                                                std::process::Command::new("cmd")
+                                                    .args(["/C", "start", "", &id_clone])
+                                                    .spawn()
+                                            } else if id_clone.ends_with(".exe")
+                                                || id_clone.ends_with(".bat")
+                                                || id_clone.ends_with(".cmd")
+                                            {
+                                                std::process::Command::new(&id_clone).spawn()
+                                            } else if path_exists {
+                                                std::process::Command::new("explorer")
+                                                    .arg(&id_clone)
+                                                    .spawn()
+                                            } else {
+                                                std::process::Command::new("cmd")
+                                                    .args(["/C", "start", "", &id_clone])
+                                                    .spawn()
+                                            };
+
+                                            if let Err(e) = result {
+                                                log::error!(
+                                                    "Failed to open '{}' on Windows: {}",
+                                                    id_clone,
+                                                    e
+                                                );
+
+                                                // 备用方案：尝试使用 PowerShell
+                                                let _ = std::process::Command::new("powershell")
+                                                    .args([
+                                                        "-Command",
+                                                        &format!(
+                                                            "Start-Process '{}'",
+                                                            id_clone.replace("'", "''")
+                                                        ),
+                                                    ])
+                                                    .spawn();
+                                            }
                                         }
                                     }
                                 },

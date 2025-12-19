@@ -23,7 +23,7 @@ use crate::{
         list::{Accessory, ItemBuilder, ListBuilder, ListItem},
         shared::{Icon, Img},
     },
-    state::{Action, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext},
+    state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
 };
 
 #[derive(Deserialize)]
@@ -65,7 +65,7 @@ impl StateViewBuilder for MenuListBuilder {
                                     let subtitle = path.join(" -> ");
                                     let actions = if let Some(indices) = item.path_indices {
                                         let indices = indices.clone();
-                                        vec![Action::new(
+                                        vec![LAction::new(
                                             Img::default().icon(Icon::BookOpen),
                                             "Select Menu Item",
                                             None,

@@ -24,7 +24,7 @@ use crate::{
     },
     hotkey::HotkeyManager,
     state::{
-        Action, ActionFn, CommandTrait, Shortcut, StateModel, StateViewBuilder, StateViewContext,
+        ActionFn, CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext,
     },
 };
 
@@ -139,14 +139,14 @@ impl RootCommands {
                 )
                 .keywords(keywords)
                 .actions(vec![
-                    Action::new_rc(
+                    LAction::new_rc(
                         Img::default().icon(command.icon.clone()),
                         command.title.clone(),
                         None,
                         command.action.clone(),
                         false,
                     ),
-                    Action::new(
+                    LAction::new(
                         Img::default().icon(Icon::Keyboard),
                         "Change Hotkey",
                         None,
