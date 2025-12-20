@@ -14,7 +14,7 @@ use crate::{
     commands::RootCommands,
     hotkey::HotkeyManager,
     ipc::server::start_server,
-    theme::Theme,
+    theme::LTheme,
     window::{LWindow, LWindowStyle},
     workspace::Workspace,
 };
@@ -22,7 +22,7 @@ use gpui::{AppContext, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
 
 pub fn run_app(listener: PlatformListener, app: gpui::App) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
-        Theme::init(cx);
+        LTheme::init(cx);
         // TODO: This still only works for a single display
         let bounds = cx.displays().first().map(|d| d.bounds()).unwrap_or(Bounds {
             origin: Point::new(Pixels::from(0.0), Pixels::from(0.0)),
@@ -32,7 +32,7 @@ pub fn run_app(listener: PlatformListener, app: gpui::App) {
             },
         });
         let _ = cx.open_window(LWindowStyle::Main.options(bounds), |cx| {
-            let theme = cx.global::<Theme>();
+            let theme = cx.global::<LTheme>();
             cx.set_background_appearance(WindowBackgroundAppearance::from(
                 theme.window_background.clone().unwrap_or_default(),
             ));

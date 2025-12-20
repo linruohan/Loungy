@@ -16,7 +16,7 @@ use crate::{
         shared::{Icon, Img, ImgMask, ImgSize},
     },
     query::{TextEvent, TextInput, TextInputWeak},
-    theme::{self, Theme},
+    theme::{self, LTheme},
     window::{LWindow, LWindowStyle},
 };
 use gpui::{
@@ -130,7 +130,7 @@ impl ToastState {
 
 impl Render for ToastState {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<theme::LTheme>();
         if let Some((el, bg, message, fade_in, fade_out)) = match self {
             ToastState::Success {
                 message,
@@ -311,7 +311,7 @@ pub struct PopupToast {
 
 impl Render for PopupToast {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<theme::LTheme>();
 
         let icon = if let Some(icon) = self.icon.clone() {
             svg()
@@ -343,27 +343,27 @@ pub struct StateItem {
     pub id: SharedString,
     pub query: TextInput,
     pub view: AnyView,
-    pub actions: View<Actions>,
+    pub actions: View<LActions>,
     pub workspace: bool,
 }
 
 pub struct StateViewContext {
     pub query: TextInputWeak,
-    pub actions: ActionsModel,
+    pub actions: LActionsModel,
     pub update_receiver: crossbeam_channel::Receiver<bool>,
 }
 
 impl StateItem {
     pub fn init(view: impl StateViewBuilder, workspace: bool, cx: &mut WindowContext) -> Self {
         let (s, r) = crossbeam_channel::unbounded::<bool>();
-        let (actions_weak, actions) = ActionsModel::init(s, cx);
+        let (actions_weak, actions) = LActionsModel::init(s, cx);
         let query = TextInput::new(cx);
 
         let actions_clone = actions_weak.clone();
         cx.subscribe(&query.view, move |_, event, cx| match event {
             TextEvent::Blur => {
                 // if !actions_clone.inner.read(cx).show {
-                //     Window::close(cx);
+                //     LWindow::close(cx);
                 // };
             }
             TextEvent::KeyDown(ev) => {
@@ -581,7 +581,7 @@ fn key_icon(el: Div, icon: Icon) -> Div {
     )
 }
 
-fn key_string(el: Div, theme: &Theme, string: impl ToString) -> Div {
+fn key_string(el: Div, theme: &LTheme, string: impl ToString) -> Div {
     el.child(
         div()
             .size_5()
@@ -600,7 +600,7 @@ fn key_string(el: Div, theme: &Theme, string: impl ToString) -> Div {
 
 impl RenderOnce for Shortcut {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<theme::LTheme>();
         let mut el = div().flex().items_center();
         let shortcut = self.inner;
         if shortcut.modifiers.control {
@@ -676,8 +676,8 @@ impl RenderOnce for Shortcut {
     }
 }
 
-pub trait ActionFn: Fn(&mut Actions, &mut WindowContext) + 'static {}
-impl<F> ActionFn for F where F: Fn(&mut Actions, &mut WindowContext) + 'static {}
+pub trait ActionFn: Fn(&mut LActions, &mut WindowContext) + 'static {}
+impl<F> ActionFn for F where F: Fn(&mut LActions, &mut WindowContext) + 'static {}
 
 #[derive(Clone, IntoElement)]
 pub struct LAction {
@@ -746,7 +746,7 @@ pub struct Dropdown {
 
 impl Render for Dropdown {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<theme::LTheme>();
         if self.items.is_empty() {
             return div();
         }
@@ -777,7 +777,7 @@ impl Render for Dropdown {
 }
 
 #[derive(Clone)]
-pub struct Actions {
+pub struct LActions {
     global: Model<Vec<LAction>>,
     local: Model<Vec<LAction>>,
     pub active: Option<StateItem>,
@@ -790,7 +790,7 @@ pub struct Actions {
     pub dropdown: View<Dropdown>,
 }
 
-impl Actions {
+impl LActions {
     fn new(update_sender: crossbeam_channel::Sender<bool>, cx: &mut WindowContext) -> Self {
         Self {
             global: cx.new_model(|_| Vec::new()),
@@ -843,7 +843,7 @@ impl Actions {
         if !self.show {
             return div();
         }
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<theme::LTheme>();
         let query = self.query.clone().unwrap();
         let list = self.list.clone().unwrap();
         let el_height = 42.0;
@@ -946,10 +946,10 @@ impl Actions {
     }
 }
 
-impl Render for Actions {
+impl Render for LActions {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         let combined = self.combined(cx).clone();
-        let theme = cx.global::<theme::Theme>();
+        let theme = cx.global::<theme::LTheme>();
         if let Some(action) = combined.first() {
             let open = combined.last().unwrap().clone();
             div()
@@ -968,20 +968,20 @@ impl Render for Actions {
 }
 
 #[derive(Clone)]
-pub struct ActionsModel {
-    pub inner: WeakView<Actions>,
+pub struct LActionsModel {
+    pub inner: WeakView<LActions>,
 }
 
-impl ActionsModel {
+impl LActionsModel {
     pub fn init(
         update_sender: crossbeam_channel::Sender<bool>,
         cx: &mut WindowContext,
-    ) -> (Self, View<Actions>) {
+    ) -> (Self, View<LActions>) {
         let inner = cx.new_view(|cx| {
             #[cfg(debug_assertions)]
             cx.on_release(|_, _, _| debug!("ActionsModel released"))
                 .detach();
-            Actions::new(update_sender, cx)
+            LActions::new(update_sender, cx)
         });
 
         let model = Self {

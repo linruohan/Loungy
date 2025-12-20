@@ -11,7 +11,7 @@
 
 use crate::components::shared::Img;
 use crate::paths::paths;
-use crate::window::Window;
+use crate::window::LWindow;
 use cocoa::appkit::NSPasteboard;
 use gpui::{AsyncWindowContext, WindowContext};
 use std::time::Duration;
@@ -154,10 +154,10 @@ swift!( fn copy_file(path: SRString));
 swift!( fn paste_file(path: SRString));
 
 pub fn close_and_paste(value: &str, formatting: bool, cx: &mut WindowContext) {
-    Window::close(cx);
+    LWindow::close(cx);
     let value = value.to_string();
     cx.spawn(move |mut cx| async move {
-        Window::wait_for_close(&mut cx).await;
+        LWindow::wait_for_close(&mut cx).await;
         ClipboardWatcher::disabled(&mut cx);
         unsafe {
             paste(SRString::from(value.as_str()), Bool::from(formatting));
@@ -167,10 +167,10 @@ pub fn close_and_paste(value: &str, formatting: bool, cx: &mut WindowContext) {
 }
 
 pub fn close_and_paste_file(path: &Path, cx: &mut WindowContext) {
-    Window::close(cx);
+    LWindow::close(cx);
     let path = path.to_string_lossy().to_string();
     cx.spawn(move |mut cx| async move {
-        Window::wait_for_close(&mut cx).await;
+        LWindow::wait_for_close(&mut cx).await;
         ClipboardWatcher::disabled(&mut cx);
         unsafe {
             paste_file(SRString::from(path.as_str()));

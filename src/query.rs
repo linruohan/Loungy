@@ -17,7 +17,7 @@ use gpui::{
 use log::debug;
 use std::ops::Range;
 
-use crate::theme::Theme;
+use crate::theme::LTheme;
 
 #[derive(IntoElement, Clone)]
 pub struct TextInput {
@@ -337,7 +337,7 @@ impl RenderOnce for TextInput {
 
 impl Render for TextView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
 
         let mut text = self.text.clone();
         let mut selection_style = HighlightStyle::default();

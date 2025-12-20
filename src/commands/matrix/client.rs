@@ -25,9 +25,9 @@ use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    db::Db,
+    db::LDb,
     paths::{paths, NAME},
-    state::{Actions, StateModel},
+    state::{LActions, StateModel},
 };
 
 #[derive(Debug, Serialize, Deserialize, Collection, Clone)]
@@ -41,7 +41,7 @@ pub(super) struct Session {
 
 pub fn db() -> &'static Database {
     static DB: OnceLock<Database> = OnceLock::new();
-    DB.get_or_init(Db::init_collection::<Session>)
+    DB.get_or_init(LDb::init_collection::<Session>)
 }
 
 impl Session {
@@ -72,7 +72,7 @@ impl Session {
     pub(super) async fn login(
         username: String,
         password: String,
-        mut actions: Actions,
+        mut actions: LActions,
         cx: &mut AsyncWindowContext,
     ) -> anyhow::Result<()> {
         let passphrase: Vec<u8> = rand::thread_rng()

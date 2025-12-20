@@ -34,7 +34,7 @@ use url::Url;
 
 pub use icon::Icon;
 
-use crate::theme::Theme;
+use crate::theme::LTheme;
 
 mod icon;
 
@@ -158,7 +158,7 @@ impl RenderOnce for Img {
         if let ImgSource::Favicon(favicon) = &self.src {
             return favicon.clone().into_any_element();
         }
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         let el = div()
             .flex()
             .items_center()

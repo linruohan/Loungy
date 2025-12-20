@@ -26,7 +26,7 @@ fn color_to_hsla(color: catppuccin::Colour) -> Hsla {
     .into()
 }
 
-impl From<catppuccin::Flavour> for Theme {
+impl From<catppuccin::Flavour> for LTheme {
     fn from(flavor: catppuccin::Flavour) -> Self {
         let colors = flavor.colours();
         let name = flavor.name();
@@ -73,7 +73,7 @@ impl From<catppuccin::Flavour> for Theme {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Theme {
+pub struct LTheme {
     pub name: SharedString,
     pub font_sans: SharedString,
     pub font_mono: SharedString,
@@ -170,17 +170,17 @@ impl Default for ThemeSettings {
     }
 }
 
-impl Theme {
+impl LTheme {
     pub fn init(cx: &mut AppContext) {
         load_fonts(cx).expect("Failed to load fonts");
         let appearance = cx.window_appearance();
-        let theme = Theme::mode(appearance);
+        let theme = LTheme::mode(appearance);
 
         cx.set_global(theme);
     }
-    pub fn mode(mode: WindowAppearance) -> Theme {
+    pub fn mode(mode: WindowAppearance) -> LTheme {
         let settings = db().get::<ThemeSettings>("theme").unwrap_or_default();
-        let list = Theme::list();
+        let list = LTheme::list();
         let name = match mode {
             WindowAppearance::Dark | WindowAppearance::VibrantDark => settings.dark,
             WindowAppearance::Light | WindowAppearance::VibrantLight => settings.light,
@@ -195,14 +195,14 @@ impl Theme {
             .clone()
     }
 
-    pub fn list() -> Vec<Theme> {
+    pub fn list() -> Vec<LTheme> {
         let config = paths().config.clone().join("themes");
-        let mut user_themes: Vec<Theme> = match std::fs::read_dir(config) {
+        let mut user_themes: Vec<LTheme> = match std::fs::read_dir(config) {
             Ok(themes) => themes
                 .filter_map(|entry| {
                     let entry = entry.ok()?;
                     let path = entry.path();
-                    let theme: Theme = match std::fs::read_to_string(path) {
+                    let theme: LTheme = match std::fs::read_to_string(path) {
                         Ok(theme) => match toml::from_str(&theme) {
                             Ok(theme) => theme,
                             Err(e) => {
@@ -223,7 +223,7 @@ impl Theme {
                 vec![]
             }
         };
-        let mut themes: Vec<Theme> = catppuccin::Flavour::all()
+        let mut themes: Vec<LTheme> = catppuccin::Flavour::all()
             .into_iter()
             .map(Self::from)
             .collect();
@@ -233,4 +233,4 @@ impl Theme {
     }
 }
 
-impl Global for Theme {}
+impl Global for LTheme {}

@@ -24,8 +24,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     commands::{RootCommand, RootCommands},
-    db::Db,
-    state::{Actions, StateModel},
+    db::LDb,
+    state::{LActions, StateModel},
     window::LWindow,
 };
 
@@ -39,7 +39,7 @@ impl Global for HotkeyManager {}
 
 fn db() -> &'static Database {
     static DB: OnceLock<Database> = OnceLock::new();
-    DB.get_or_init(Db::init_collection::<CommandHotkeys>)
+    DB.get_or_init(LDb::init_collection::<CommandHotkeys>)
 }
 
 impl HotkeyManager {
@@ -82,7 +82,7 @@ impl HotkeyManager {
                                         },
                                         cx,
                                     );
-                                    (command.action)(&mut Actions::default(cx), cx);
+                                    (command.action)(&mut LActions::default(cx), cx);
                                     LWindow::open(cx);
                                 } else {
                                     LWindow::toggle(cx);

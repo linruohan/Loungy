@@ -25,7 +25,7 @@ use crate::{
     date::format_date,
     paths::paths,
     state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
-    theme::Theme,
+    theme::LTheme,
 };
 
 #[derive(Deserialize)]
@@ -74,7 +74,7 @@ impl StateViewBuilder for TailscaleListBuilder {
                     let offline = "offline"
                         .to_string()
                         .eq(&this.actions.get_dropdown_value(cx));
-                    let theme = cx.global::<Theme>().clone();
+                    let theme = cx.global::<LTheme>().clone();
                     let mut env: HashMap<String, String> = HashMap::new();
                     env.insert("PATH".to_string(), paths().path_env.clone());
                     let status = Command::new("tailscale")

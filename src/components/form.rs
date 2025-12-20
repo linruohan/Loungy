@@ -12,8 +12,8 @@
 use crate::{
     components::shared::{Icon, Img},
     query::{TextEvent, TextInputWeak},
-    state::{Actions, LAction, Shortcut, StateViewContext},
-    theme::Theme,
+    state::{LAction, LActions, Shortcut, StateViewContext},
+    theme::LTheme,
 };
 use gpui::{
     div, list, Context, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment,
@@ -74,7 +74,7 @@ pub struct InputView {
 impl Render for InputView {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
         //cx.focus(&self.focus_handle);
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         let fm = self.focus_model.clone();
         let index = self.index;
 
@@ -360,7 +360,7 @@ pub enum InputKind {
     },
 }
 
-pub trait SubmitFn: Fn(HashMap<String, Input>, &mut Actions, &mut WindowContext) {
+pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut WindowContext) {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
         Self: 'a;
@@ -368,7 +368,7 @@ pub trait SubmitFn: Fn(HashMap<String, Input>, &mut Actions, &mut WindowContext)
 
 impl<F> SubmitFn for F
 where
-    F: Fn(HashMap<String, Input>, &mut Actions, &mut WindowContext) + Clone,
+    F: Fn(HashMap<String, Input>, &mut LActions, &mut WindowContext) + Clone,
 {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where

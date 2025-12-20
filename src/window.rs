@@ -9,7 +9,7 @@
  *
  */
 
-use crate::{components::shared::NoView, state::StateModel, theme::Theme};
+use crate::{components::shared::NoView, state::StateModel, theme::LTheme};
 use gpui::{
     AsyncAppContext, AsyncWindowContext, BorrowAppContext, Bounds, Context, Global, Pixels, Point,
     Size, View, VisualContext, WindowBounds, WindowContext, WindowKind, WindowOptions,
@@ -78,8 +78,8 @@ impl LWindow {
             })
             .detach();
             cx.observe_window_appearance(|_, cx| {
-                cx.update_global::<Theme, _>(|theme: &mut Theme, cx| {
-                    *theme = Theme::mode(cx.window_appearance());
+                cx.update_global::<LTheme, _>(|theme: &mut LTheme, cx| {
+                    *theme = LTheme::mode(cx.window_appearance());
                     cx.refresh();
                 });
             })

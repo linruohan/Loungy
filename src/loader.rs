@@ -60,7 +60,7 @@ impl LoaderState {
 pub struct ActiveLoaders {}
 impl RenderOnce for ActiveLoaders {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let theme = cx.global::<theme::Theme>().clone();
+        let theme = cx.global::<theme::LTheme>().clone();
 
         div().w_full().h_px().bg(theme.mantle).relative().child(
             div().absolute().h_full().top_0().bottom_0().with_animation(

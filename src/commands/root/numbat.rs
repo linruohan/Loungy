@@ -22,7 +22,7 @@ use numbat::{
 use crate::{
     components::{list::ItemComponent, shared::Icon},
     query::{TextEvent, TextInputWeak},
-    theme::Theme,
+    theme::LTheme,
 };
 
 #[derive(Clone)]
@@ -131,7 +131,7 @@ impl ItemComponent for NumbatWrapper {
 
 impl Render for Numbat {
     fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         if self.result.is_none() {
             return div();
         }

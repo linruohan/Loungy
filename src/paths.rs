@@ -11,7 +11,7 @@
 
 use std::{path::PathBuf, sync::OnceLock};
 
-pub struct Paths {
+pub struct LPaths {
     pub path_env: String,
     pub cache: PathBuf,
     pub config: PathBuf,
@@ -20,7 +20,7 @@ pub struct Paths {
 
 pub static NAME: &str = "loungy";
 
-impl Paths {
+impl LPaths {
     pub fn new() -> Self {
         let username = whoami::username();
         #[cfg(target_os = "macos")]
@@ -69,7 +69,7 @@ impl Paths {
     }
 }
 
-pub fn paths() -> &'static Paths {
-    static PATHS: OnceLock<Paths> = OnceLock::new();
-    PATHS.get_or_init(Paths::new)
+pub fn paths() -> &'static LPaths {
+    static PATHS: OnceLock<LPaths> = OnceLock::new();
+    PATHS.get_or_init(LPaths::new)
 }

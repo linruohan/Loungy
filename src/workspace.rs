@@ -11,7 +11,7 @@
 use crate::components::shared::{Icon, Img};
 use crate::loader::ActiveLoaders;
 use crate::state::{StateItem, StateModel};
-use crate::theme::Theme;
+use crate::theme::LTheme;
 use gpui::{
     div, InteractiveElement, IntoElement, MouseButton, ParentElement, Render, Styled, View,
     ViewContext, VisualContext, WindowContext,
@@ -32,7 +32,7 @@ impl Workspace {
 
 impl Render for Workspace {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         let stack: &Vec<StateItem> = self.state.inner.read(cx).stack.as_ref();
         let item = stack.last().unwrap();
         let view = stack.iter().rfind(|item| item.workspace).unwrap();

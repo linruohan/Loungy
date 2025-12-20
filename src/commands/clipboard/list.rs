@@ -44,7 +44,7 @@ use crate::{
         shared::{Icon, Img, ImgMask, ImgSize, ObjectFit},
     },
     date::format_date,
-    db::Db,
+    db::LDb,
     paths::paths,
     platform::{
         clipboard, close_and_paste, close_and_paste_file, get_frontmost_application_data, ocr,
@@ -53,7 +53,7 @@ use crate::{
     state::{
         CommandTrait, LAction, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
     },
-    theme::Theme,
+    theme::LTheme,
 };
 
 #[derive(Clone)]
@@ -460,7 +460,7 @@ impl ClipboardPreview {
 
 impl Render for ClipboardPreview {
     fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
 
         let mut table = vec![
             (
@@ -597,12 +597,12 @@ impl StateViewBuilder for ClipboardPreview {
 
 pub(super) fn db_items() -> &'static Database {
     static DB: OnceLock<Database> = OnceLock::new();
-    DB.get_or_init(Db::init_collection::<ClipboardListItem>)
+    DB.get_or_init(LDb::init_collection::<ClipboardListItem>)
 }
 
 pub(super) fn db_detail() -> &'static Database {
     static DB: OnceLock<Database> = OnceLock::new();
-    DB.get_or_init(Db::init_collection::<ClipboardDetail>)
+    DB.get_or_init(LDb::init_collection::<ClipboardDetail>)
 }
 
 pub struct ClipboardCommandBuilder;

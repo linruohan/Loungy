@@ -13,7 +13,7 @@ use smol::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use super::{SOCKET_PATH, SOCKET_PORT};
 use crate::{
     commands::RootCommands,
-    state::{Actions, StateModel},
+    state::{LActions, StateModel},
     window::LWindow,
 };
 
@@ -226,7 +226,7 @@ async fn handle_client(
                         },
                         cx,
                     );
-                    (command.action)(&mut Actions::default(cx), cx);
+                    (command.action)(&mut LActions::default(cx), cx);
                     LWindow::open(cx);
                 } else {
                     LWindow::toggle(cx);

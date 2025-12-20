@@ -50,7 +50,7 @@ use crate::{
     state::{
         CommandTrait, LAction, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,
     },
-    theme::Theme,
+    theme::LTheme,
 };
 
 use super::{
@@ -82,7 +82,7 @@ pub(super) struct Reactions(Vec<Reaction>);
 
 impl RenderOnce for Reactions {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         div().flex().children(self.0.into_iter().map(|reaction| {
             div()
                 .flex()
@@ -226,7 +226,7 @@ impl Message {
 
 impl ItemComponent for Message {
     fn render(&self, selected: bool, cx: &WindowContext) -> AnyElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         let show_avatar = !self.me && self.first;
         let show_reactions = !self.reactions.0.is_empty();
 

@@ -29,17 +29,17 @@ use serde::{de, Serialize};
 use crate::paths::paths;
 
 #[derive(Clone)]
-pub struct Db {
+pub struct LDb {
     storage: Storage,
     pub inner: Database,
 }
 
-pub fn db() -> &'static Db {
-    static DB: OnceLock<Db> = OnceLock::new();
-    DB.get_or_init(Db::new)
+pub fn db() -> &'static LDb {
+    static DB: OnceLock<LDb> = OnceLock::new();
+    DB.get_or_init(LDb::new)
 }
 
-impl Db {
+impl LDb {
     pub fn new() -> Self {
         let data = paths().data.clone();
         let path = data.join("bonsai/db");

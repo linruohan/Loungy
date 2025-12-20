@@ -32,11 +32,11 @@ use crate::{
         list::{Accessory, AsyncListItems, Item, ItemBuilder, ListBuilder, ListItem},
         shared::{Icon, Img, ImgMask},
     },
-    db::Db,
+    db::LDb,
     paths::paths,
     platform::{autofill, close_and_paste},
     state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
-    window::Window,
+    window::LWindow,
 };
 
 use super::accounts::{
@@ -310,7 +310,7 @@ pub struct BitwardenCommandBuilder;
 
 pub(super) fn db() -> &'static Database {
     static DB: OnceLock<Database> = OnceLock::new();
-    DB.get_or_init(Db::init_collection::<BitwardenAccount>)
+    DB.get_or_init(LDb::init_collection::<BitwardenAccount>)
 }
 
 struct EntryModel {
@@ -463,7 +463,7 @@ impl RootCommandBuilder for BitwardenCommandBuilder {
                                     None,
                                     {
                                         |this, cx| {
-                                            Window::close(cx);
+                                            LWindow::close(cx);
                                             let Some(meta) = this.get_meta_model::<(
                                                 Vec<String>,
                                                 HashMap<String, String>,
@@ -472,7 +472,7 @@ impl RootCommandBuilder for BitwardenCommandBuilder {
                                                 return;
                                             };
                                             cx.spawn(move |mut cx| async move {
-                                                Window::wait_for_close(&mut cx).await;
+                                                LWindow::wait_for_close(&mut cx).await;
                                                 let mut prev = "".to_string();
                                                 let max_tries = 900;
                                                 let mut tries = 0;
@@ -542,7 +542,7 @@ impl RootCommandBuilder for BitwardenCommandBuilder {
                                         Some(Shortcut::new("o").cmd()),
                                         {
                                             move |_, cx| {
-                                                Window::close(cx);
+                                                LWindow::close(cx);
                                                 cx.open_url(url.as_str());
                                             }
                                         },

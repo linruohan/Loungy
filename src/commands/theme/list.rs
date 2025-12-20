@@ -18,7 +18,7 @@ use crate::{
     },
     db::db,
     state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
-    theme::{Theme, ThemeSettings},
+    theme::{LTheme, ThemeSettings},
 };
 use gpui::{AnyView, BorrowAppContext, WindowBackgroundAppearance, WindowContext};
 use std::time::Duration;
@@ -34,7 +34,7 @@ impl StateViewBuilder for ThemeListBuilder {
             .interval(Duration::from_secs(10))
             .build(
                 |_, _, _cx| {
-                    let themes = Theme::list();
+                    let themes = LTheme::list();
                     Ok(Some(
                         themes
                             .into_iter()
@@ -57,7 +57,7 @@ impl StateViewBuilder for ThemeListBuilder {
                                         {
                                             let theme = theme.clone();
                                             move |this, cx| {
-                                                cx.update_global::<Theme, _>(|this, cx| {
+                                                cx.update_global::<LTheme, _>(|this, cx| {
                                                     *this = theme.clone();
                                                     cx.set_background_appearance(
                                                         WindowBackgroundAppearance::from(

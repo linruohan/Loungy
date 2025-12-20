@@ -25,7 +25,7 @@ use crate::{
     paths::paths,
     platform::{get_application_data, AppData},
     state::{CommandTrait, LAction, StateModel, StateViewBuilder, StateViewContext},
-    theme::Theme,
+    theme::LTheme,
 };
 
 #[derive(Clone)]
@@ -88,7 +88,7 @@ impl StateViewBuilder for ProcessListBuilder {
             .interval(Duration::from_secs(5))
             .build(
                 |this, _, cx| {
-                    let theme = cx.global::<Theme>().clone();
+                    let theme = cx.global::<LTheme>().clone();
                     let cache_dir = paths().cache.join("apps");
                     if !cache_dir.exists() {
                         fs::create_dir_all(cache_dir.clone()).unwrap();

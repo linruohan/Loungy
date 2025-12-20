@@ -30,8 +30,8 @@ use log::debug;
 use crate::{
     loader::Loader,
     query::{TextEvent, TextInputWeak},
-    state::{ActionsModel, LAction, Shortcut, StateItem, StateViewContext},
-    theme::Theme,
+    state::{LAction, LActionsModel, Shortcut, StateItem, StateViewContext},
+    theme::LTheme,
 };
 
 use nucleo::fuzzy_match;
@@ -58,7 +58,7 @@ impl Accessory {
 
 impl RenderOnce for Accessory {
     fn render(self, cx: &mut WindowContext) -> impl IntoElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         match self {
             Accessory::Tag { tag, img } => {
                 let el = div()
@@ -111,7 +111,7 @@ impl ListItem {
 
 impl ItemComponent for ListItem {
     fn render(&self, _selected: bool, cx: &WindowContext) -> AnyElement {
-        let theme = cx.global::<Theme>();
+        let theme = cx.global::<LTheme>();
         let el = if let Some(img) = &self.img {
             div().child(div().mr_4().child(img.clone()))
         } else {
@@ -260,7 +260,7 @@ impl RenderOnce for Item {
         match self.preset {
             ItemPreset::Plain => self.component.render(self.selected, cx),
             ItemPreset::Default => {
-                let theme = cx.global::<Theme>();
+                let theme = cx.global::<LTheme>();
                 let mut bg_hover = theme.mantle;
                 bg_hover.fade_out(0.5);
                 if self.selected {
@@ -358,7 +358,7 @@ impl<F> FilterList for F where F: Fn(&mut List, &mut ViewContext<List>) -> Vec<I
 pub struct List {
     state: ListState,
     selected: Model<u64>,
-    pub actions: ActionsModel,
+    pub actions: LActionsModel,
     pub items_all: Vec<Item>,
     pub items: Model<Vec<Item>>,
     pub query: TextInputWeak,
@@ -760,7 +760,7 @@ impl AsyncListItems {
             }
         }
     }
-    pub fn loader(view: &View<Self>, actions: &ActionsModel, cx: &mut WindowContext) {
+    pub fn loader(view: &View<Self>, actions: &LActionsModel, cx: &mut WindowContext) {
         if let Some(a) = actions.inner.upgrade() {
             let init = view.read(cx).initialized;
             let a = a.read(cx).clone();
