@@ -32,7 +32,7 @@ use crate::{
 use super::{
     account::AccountCreationBuilder,
     chat::ChatRoom,
-    client::{db, Session},
+    client::{Session, db},
     compose::{Compose, ComposeKind},
     mxc::mxc_to_http,
 };

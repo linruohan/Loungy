@@ -18,13 +18,13 @@ use std::{
 };
 
 use anyhow::anyhow;
-use async_std::task::{spawn, spawn_blocking, JoinHandle};
-use futures::future::Shared;
+use async_std::task::{JoinHandle, spawn, spawn_blocking};
 use futures::FutureExt;
+use futures::future::Shared;
 use gpui::{
-    div, img, percentage, svg, Animation, AnimationExt, Hsla, ImageSource, IntoElement,
-    ParentElement, Render, RenderOnce, SharedUri, Styled, Transformation, View, ViewContext,
-    VisualContext, WindowContext,
+    Animation, AnimationExt, Hsla, ImageSource, IntoElement, ParentElement, Render,
+    RenderOnce, SharedUri, Styled, Transformation, View, ViewContext, VisualContext, WindowContext,
+    div, img, percentage, svg,
 };
 use log::debug;
 use parking_lot::Mutex;
@@ -317,18 +317,18 @@ impl Favicon {
     ) -> View<Self> {
         let url = 'url: {
             let Ok(url) = Url::parse(&url.to_string()) else {
-                break 'url "";
+                break 'url String::new();
             };
             if url.cannot_be_a_base() || !url.scheme().starts_with("http") {
-                break 'url "";
+                break 'url String::new();
             }
             let Some(host) = url.host_str() else {
-                break 'url "";
+                break 'url String::new();
             };
             let Ok(url) = Url::parse(&format!("{}://{}", url.scheme(), host)) else {
-                break 'url "";
+                break 'url String::new();
             };
-            url.to_string().as_str()
+            url.to_string()
         }
         .to_string();
 

@@ -10,9 +10,9 @@
  */
 
 use gpui::{
-    div, ClipboardItem, EventEmitter, FocusHandle, HighlightStyle, InteractiveElement,
-    InteractiveText, IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce, Styled,
-    StyledText, TextStyle, View, ViewContext, VisualContext, WeakView, WindowContext,
+    ClipboardItem, EventEmitter, FocusHandle, HighlightStyle, InteractiveElement, InteractiveText,
+    IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce, Styled, StyledText, TextStyle,
+    View, ViewContext, VisualContext, WeakView, WindowContext, div,
 };
 use log::debug;
 use std::ops::Range;

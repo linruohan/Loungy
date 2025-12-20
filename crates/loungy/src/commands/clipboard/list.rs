@@ -25,9 +25,9 @@ use bonsaidb::{
     local::Database,
 };
 use gpui::{
-    canvas, div, img, list, AnyView, AsyncAppContext, AvailableSpace, Bounds, FontWeight,
-    ImageSource, IntoElement, ListAlignment, ListState, Model, Render, ViewContext, WeakView,
-    WindowContext,
+    AnyView, AsyncAppContext, AvailableSpace, Bounds, FontWeight, ImageSource, IntoElement,
+    ListAlignment, ListState, Model, Render, ViewContext, WeakView, WindowContext, canvas, div,
+    img, list,
 };
 use image::{DynamicImage, ImageBuffer};
 use jiff::{Span, Timestamp, ToSpan};
@@ -47,8 +47,8 @@ use crate::{
     db::LDb,
     paths::paths,
     platform::{
-        clipboard, close_and_paste, close_and_paste_file, get_frontmost_application_data, ocr,
-        AppData, ClipboardWatcher,
+        AppData, ClipboardWatcher, clipboard, close_and_paste, close_and_paste_file,
+        get_frontmost_application_data, ocr,
     },
     state::{
         CommandTrait, LAction, Shortcut, StateItem, StateModel, StateViewBuilder, StateViewContext,

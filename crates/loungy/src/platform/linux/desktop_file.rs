@@ -9,7 +9,7 @@
  *
  */
 
-use freedesktop_entry_parser::{parse_entry, AttrSelector};
+use freedesktop_entry_parser::{AttrSelector, parse_entry};
 use freedesktop_icons::lookup;
 use std::path::PathBuf;
 

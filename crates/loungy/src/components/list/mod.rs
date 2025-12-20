@@ -10,13 +10,13 @@
  */
 
 use gpui::{
-    div, list, relative, AnyElement, AnyModel, AppContext, Context, EventEmitter, FontWeight,
-    InteractiveElement, IntoElement, ListAlignment, ListOffset, ListScrollEvent, ListState, Model,
-    MouseButton, ParentElement, Pixels, Render, RenderOnce, SharedString, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    AnyElement, AnyModel, AppContext, Context, EventEmitter, FontWeight, InteractiveElement,
+    IntoElement, ListAlignment, ListOffset, ListScrollEvent, ListState, Model, MouseButton,
+    ParentElement, Pixels, Render, RenderOnce, SharedString, Styled, View, ViewContext,
+    VisualContext, WindowContext, div, list, relative,
 };
 use std::{
-    collections::{hash_map::DefaultHasher, HashMap},
+    collections::{HashMap, hash_map::DefaultHasher},
     hash::{Hash, Hasher},
     rc::Rc,
     sync::mpsc::channel,
@@ -406,11 +406,7 @@ impl List {
             return;
         }
         let index = if let Some((index, _)) = self.selected(cx) {
-            if index > 0 {
-                index - 1
-            } else {
-                0
-            }
+            if index > 0 { index - 1 } else { 0 }
         } else {
             0
         };
@@ -433,11 +429,7 @@ impl List {
         }
         let index = if let Some((index, _)) = self.selected(cx) {
             let i = self.items.read(cx).len() - 1;
-            if index < i {
-                index + 1
-            } else {
-                i
-            }
+            if index < i { index + 1 } else { i }
         } else {
             0
         };

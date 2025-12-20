@@ -9,14 +9,14 @@
  *
  */
 use gpui::{
-    div, svg, AnyElement, FontWeight, IntoElement, ParentElement, Render, Styled, View,
-    VisualContext, WindowContext,
+    AnyElement, FontWeight, IntoElement, ParentElement, Render, Styled, View, VisualContext,
+    WindowContext, div, svg,
 };
 use numbat::{
+    Context,
     markup::{Formatter, PlainTextFormatter},
     module_importer::BuiltinModuleImporter,
     pretty_print::PrettyPrint,
-    Context,
 };
 
 use crate::{

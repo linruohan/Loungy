@@ -27,7 +27,7 @@ use crate::{
     state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
 };
 
-use super::list::{db, BitwardenAccount};
+use super::list::{BitwardenAccount, db};
 
 #[derive(Clone)]
 pub(super) struct BitwardenPasswordPromptBuilder {

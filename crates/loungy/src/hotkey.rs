@@ -16,8 +16,8 @@ use bonsaidb::{
     local::Database,
 };
 use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyEvent, GlobalHotKeyManager,
+    hotkey::{Code, HotKey, Modifiers},
 };
 use gpui::{BorrowAppContext, Global, Keystroke, WindowContext};
 use serde::{Deserialize, Serialize};

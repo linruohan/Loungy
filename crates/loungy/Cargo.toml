@@ -1,8 +1,7 @@
 [package]
 name = "loungy"
 version = "0.1.3"
-edition = "2021"
-rust-version = "1.80.0"
+edition = "2024"
 description = "Loungy is a WIP launcher in the vein of Raycast and Alfred."
 
 [package.metadata.packager]
@@ -31,10 +30,8 @@ parking_lot.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 numbat.workspace = true
-numbat-exchange-rates.workspace = true
 whoami.workspace = true
 anyhow.workspace = true
-rust-embed.workspace = true
 regex.workspace = true
 bonsaidb.workspace = true
 log.workspace = true
@@ -51,14 +48,12 @@ arboard = { workspace = true, optional = true }
 image.workspace = true
 crossbeam-channel.workspace = true
 reqwest.workspace = true
-quick-xml.workspace = true
 scraper.workspace = true
 clap.workspace = true
 notify.workspace = true
 notify-debouncer-full.workspace = true
 jiff.workspace = true
 smol.workspace = true
-windows.workspace = true
 md5.workspace = true
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
@@ -73,6 +68,7 @@ winresource = "0.1.28"
 naga = { version = "27.0.3", features = ["wgsl-in"] }
 embed-resource = "3.0.6"
 winresource = "0.1.28"
+windows.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 swift-rs = "1.0.6"

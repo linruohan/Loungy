@@ -13,7 +13,7 @@ use gpui::{AnyView, Keystroke, WindowContext};
 use serde::Deserialize;
 use serde_json::Value;
 use std::time::Duration;
-use swift_rs::{swift, SRData};
+use swift_rs::{SRData, swift};
 
 use crate::{
     command,

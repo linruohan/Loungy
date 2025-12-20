@@ -10,7 +10,7 @@
  */
 
 use gpui::AppContext;
-use jiff::{fmt::strtime, tz::TimeZone, Timestamp, ToSpan};
+use jiff::{Timestamp, ToSpan, fmt::strtime, tz::TimeZone};
 
 pub fn format_date(date: Timestamp, _cx: &AppContext) -> String {
     let tz = TimeZone::system();

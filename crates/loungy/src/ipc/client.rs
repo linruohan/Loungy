@@ -2,7 +2,7 @@ use clap::Command;
 use gpui::private::serde_json;
 use smol::io::{AsyncReadExt, AsyncWriteExt};
 
-use super::server::{get_command, CommandPayload, TopLevelCommand};
+use super::server::{CommandPayload, TopLevelCommand, get_command};
 use crate::{commands::RootCommands, ipc::SOCKET_PATH};
 
 pub async fn client_connect() -> anyhow::Result<()> {

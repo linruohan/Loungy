@@ -14,7 +14,7 @@ use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder, RootCommands},
     components::{
-        list::{nucleo::fuzzy_match, Accessory, Item, ItemBuilder, ListBuilder, ListItem},
+        list::{Accessory, Item, ItemBuilder, ListBuilder, ListItem, nucleo::fuzzy_match},
         shared::{Icon, Img},
     },
     platform::{get_application_data, get_application_files, get_application_folders},

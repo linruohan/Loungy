@@ -16,9 +16,9 @@ use crate::{
     theme::LTheme,
 };
 use gpui::{
-    div, list, Context, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment,
-    ListState, Model, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    Context, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment, ListState,
+    Model, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled, View, ViewContext,
+    VisualContext, WindowContext, div, list,
 };
 use std::{any::Any, collections::HashMap};
 

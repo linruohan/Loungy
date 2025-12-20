@@ -19,7 +19,7 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use swift_rs::{swift, Bool, SRObject, SRString};
+use swift_rs::{Bool, SRObject, SRString, swift};
 
 use super::{AppData, ClipboardWatcher};
 

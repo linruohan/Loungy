@@ -23,7 +23,7 @@ use crate::{
         shared::{Icon, Img, ImgMask, ImgSize},
     },
     paths::paths,
-    platform::{get_application_data, AppData},
+    platform::{AppData, get_application_data},
     state::{CommandTrait, LAction, StateModel, StateViewBuilder, StateViewContext},
     theme::LTheme,
 };

@@ -4,9 +4,9 @@ use std::{
     task::{Context, Poll},
 };
 
-use anyhow::{anyhow, Error};
-use clap::{command, Arg, ValueEnum};
-use gpui::{private::serde_json, AsyncWindowContext};
+use anyhow::{Error, anyhow};
+use clap::{Arg, ValueEnum, command};
+use gpui::{AsyncWindowContext, private::serde_json};
 use serde::{Deserialize, Serialize};
 use smol::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 

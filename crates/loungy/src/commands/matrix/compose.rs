@@ -11,7 +11,7 @@
 
 use gpui::{AnyView, WindowContext};
 use matrix_sdk::ruma::events::room::message::{ForwardThread, RoomMessageEventContent};
-use matrix_sdk_ui::{timeline::EventTimelineItem, Timeline};
+use matrix_sdk_ui::{Timeline, timeline::EventTimelineItem};
 use std::sync::Arc;
 
 use crate::{

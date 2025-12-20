@@ -20,11 +20,11 @@ use crate::{
     window::{LWindow, LWindowStyle},
 };
 use gpui::{
-    bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement, AnyModel,
-    AnyView, AppContext, AsyncWindowContext, BorrowAppContext, Bounds, Context, Div, FontWeight,
-    Global, Hsla, IntoElement, Keystroke, Model, Modifiers, ParentElement, Pixels, Point, Render,
-    RenderOnce, SharedString, Size, Styled, View, ViewContext, VisualContext, WeakView,
-    WindowContext,
+    Animation, AnimationExt, AnyElement, AnyModel, AnyView, AppContext, AsyncWindowContext,
+    BorrowAppContext, Bounds, Context, Div, FontWeight, Global, Hsla, IntoElement, Keystroke,
+    Model, Modifiers, ParentElement, Pixels, Point, Render, RenderOnce, SharedString, Size, Styled,
+    View, ViewContext, VisualContext, WeakView, WindowContext, bounce, div, ease_in_out, relative,
+    svg,
 };
 use log::debug;
 use parking_lot::{Mutex, MutexGuard};

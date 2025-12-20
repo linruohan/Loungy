@@ -13,8 +13,8 @@ use crate::loader::ActiveLoaders;
 use crate::state::{StateItem, StateModel};
 use crate::theme::LTheme;
 use gpui::{
-    div, InteractiveElement, IntoElement, MouseButton, ParentElement, Render, Styled, View,
-    ViewContext, VisualContext, WindowContext,
+    InteractiveElement, IntoElement, MouseButton, ParentElement, Render, Styled, View, ViewContext,
+    VisualContext, WindowContext, div,
 };
 
 pub struct Workspace {

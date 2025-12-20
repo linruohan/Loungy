@@ -19,12 +19,12 @@ use bonsaidb::{
         schema::Collection,
     },
     local::{
+        Database, Storage,
         config::{Builder, StorageConfiguration},
         vault::LocalVaultKeyStorage,
-        Database, Storage,
     },
 };
-use serde::{de, Serialize};
+use serde::{Serialize, de};
 
 use crate::paths::paths;
 

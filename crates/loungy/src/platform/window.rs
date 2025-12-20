@@ -20,11 +20,10 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
-use windows::core::{w, Error, HRESULT, PCWSTR};
 use windows::Win32::Foundation::{
-    GlobalFree, ERROR_NO_DATA, HANDLE, HGLOBAL, HINSTANCE, LPARAM, LRESULT, POINT, WPARAM,
+    ERROR_NO_DATA, GlobalFree, HANDLE, HGLOBAL, HINSTANCE, LPARAM, LRESULT, POINT, WPARAM,
 };
-use windows::Win32::Graphics::Gdi::{UpdateWindow, HBRUSH};
+use windows::Win32::Graphics::Gdi::{HBRUSH, UpdateWindow};
 use windows::Win32::System::DataExchange::{
     AddClipboardFormatListener, GetClipboardData, IsClipboardFormatAvailable,
     RemoveClipboardFormatListener, SetClipboardViewer,
@@ -33,22 +32,23 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Memory::GMEM_ZEROINIT;
 use windows::Win32::System::Ole::{CF_HDROP, CF_TEXT, CF_UNICODETEXT};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
-    MapVirtualKeyW, KEYBD_EVENT_FLAGS, MAPVK_VK_TO_VSC,
+    KEYBD_EVENT_FLAGS, MAPVK_VK_TO_VSC, MapVirtualKeyW,
 };
 use windows::Win32::UI::Shell::DROPFILES;
 use windows::Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, DefWindowProcW, DispatchMessageW, GetForegroundWindow, GetMessageW,
-    PostQuitMessage, RegisterClassW, ShowWindow, TranslateMessage, CS_HREDRAW, CS_VREDRAW, HCURSOR,
-    HICON, MSG, SW_SHOW, WINDOW_EX_STYLE, WNDCLASSW, WNDCLASS_STYLES, WS_OVERLAPPEDWINDOW,
+    CS_HREDRAW, CS_VREDRAW, CreateWindowExW, DefWindowProcW, DispatchMessageW, GetForegroundWindow,
+    GetMessageW, HCURSOR, HICON, MSG, PostQuitMessage, RegisterClassW, SW_SHOW, ShowWindow,
+    TranslateMessage, WINDOW_EX_STYLE, WNDCLASS_STYLES, WNDCLASSW, WS_OVERLAPPEDWINDOW,
 };
 use windows::Win32::{
     Foundation::HWND,
     System::{
         DataExchange::{CloseClipboard, EmptyClipboard, OpenClipboard, SetClipboardData},
-        Memory::{GlobalAlloc, GlobalLock, GlobalUnlock, GMEM_MOVEABLE},
+        Memory::{GMEM_MOVEABLE, GlobalAlloc, GlobalLock, GlobalUnlock},
     },
     UI::WindowsAndMessaging::GetWindowTextW,
 };
+use windows::core::{Error, HRESULT, PCWSTR, w};
 
 pub fn get_application_data(path: &Path) -> Option<AppData> {
     let cache_dir = paths().cache.join("apps");
@@ -93,17 +93,17 @@ pub fn get_application_data(path: &Path) -> Option<AppData> {
 }
 pub fn get_application_folders() -> Vec<PathBuf> {
     use windows::{
-        core::PWSTR,
         Win32::{
             System::Com::{
-                CoInitializeEx, CoTaskMemFree, CoUninitialize, COINIT_APARTMENTTHREADED,
+                COINIT_APARTMENTTHREADED, CoInitializeEx, CoTaskMemFree, CoUninitialize,
             },
             UI::Shell::{
                 FOLDERID_Desktop, FOLDERID_LocalAppData, FOLDERID_ProgramData,
                 FOLDERID_ProgramFiles, FOLDERID_ProgramFilesX86, FOLDERID_RoamingAppData,
-                SHGetKnownFolderPath, KF_FLAG_DEFAULT,
+                KF_FLAG_DEFAULT, SHGetKnownFolderPath,
             },
         },
+        core::PWSTR,
     };
     let mut folders = Vec::new();
 
@@ -478,7 +478,7 @@ pub fn autofill(value: &str, _password: bool, prev: &str) -> Option<String> {
     // Windows实现通常使用UI Automation或SendInput
     // 这里提供简化实现
     use windows::Win32::UI::Input::KeyboardAndMouse::{
-        SendInput, INPUT, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, VIRTUAL_KEY,
+        INPUT, INPUT_KEYBOARD, KEYBDINPUT, KEYEVENTF_KEYUP, SendInput, VIRTUAL_KEY,
     };
 
     // 简化：模拟键盘输入
@@ -570,7 +570,7 @@ pub async fn clipboard(
     use windows::Win32::{
         Foundation::{GetLastError, HINSTANCE},
         UI::WindowsAndMessaging::{
-            CreateWindowExW, RegisterClassExW, CW_USEDEFAULT, WNDCLASSEXW, WS_OVERLAPPED,
+            CW_USEDEFAULT, CreateWindowExW, RegisterClassExW, WNDCLASSEXW, WS_OVERLAPPED,
         },
     };
 

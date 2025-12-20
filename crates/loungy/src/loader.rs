@@ -1,10 +1,10 @@
 use crate::{state::LazyMutex, theme};
 use gpui::{
-    div, linear, relative, Animation, AnimationExt, IntoElement, ParentElement, RenderOnce, Styled,
-    WindowContext,
+    Animation, AnimationExt, IntoElement, ParentElement, RenderOnce, Styled, WindowContext, div,
+    linear, relative,
 };
 use std::{
-    sync::{atomic::AtomicBool, Arc},
+    sync::{Arc, atomic::AtomicBool},
     time::{Duration, Instant},
 };
 
@@ -87,11 +87,7 @@ impl RenderOnce for ActiveLoaders {
                         let opacity = {
                             let i = show_ts.elapsed().as_millis() as f32 / 500.0;
                             let i = if i > 1.0 { 1.0 } else { i };
-                            if show {
-                                1.0 - i
-                            } else {
-                                i
-                            }
+                            if show { 1.0 - i } else { i }
                         };
                         let mut bg = theme.lavender;
 
