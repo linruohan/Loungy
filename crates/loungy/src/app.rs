@@ -10,7 +10,6 @@
  */
 use crate::ipc::server::PlatformListener;
 use crate::{
-    assets::Assets,
     commands::RootCommands,
     hotkey::HotkeyManager,
     ipc::server::start_server,
@@ -19,7 +18,7 @@ use crate::{
     workspace::Workspace,
 };
 use gpui::{AppContext, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
-
+use loungy_assets::Assets;
 pub fn run_app(listener: PlatformListener, app: gpui::App) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
         LTheme::init(cx);

@@ -1,0 +1,46 @@
+use std::env;
+#[cfg(target_os = "macos")]
+use swift_rs::SwiftLinker;
+
+fn main() {
+    let target = env::var("CARGO_CFG_TARGET_OS");
+    println!("cargo::rustc-check-cfg=cfg(glues)");
+
+    match target.as_deref() {
+        #[cfg(target_os = "windows")]
+        Ok("windows") => {
+            let manifest = std::path::Path::new("resources/windows/loungy.manifest.xml");
+            let rc_file = std::path::Path::new("resources/windows/loungy.rc");
+            println!("cargo:rerun-if-changed={}", manifest.display());
+            println!("cargo:rerun-if-changed={}", rc_file.display());
+            embed_resource::compile(rc_file, embed_resource::NONE)
+                .manifest_required()
+                .unwrap();
+            #[cfg(target_env = "msvc")]
+            {
+                // todo(windows): This is to avoid stack overflow. Remove it when solved.
+                println!("cargo:rustc-link-arg=/stack:{}", 8 * 1024 * 1024);
+            }
+
+            let icon = std::path::Path::new("resources/windows/app-icon.ico");
+            println!("cargo:rerun-if-changed={}", icon.display());
+            let mut res = winresource::WindowsResource::new();
+
+            res.set_icon(icon.to_str().unwrap());
+            res.set("FileDescription", "Loungy");
+            res.set("ProductName", "Loungy");
+
+            if let Err(e) = res.compile() {
+                eprintln!("{}", e);
+                std::process::exit(1);
+            }
+        }
+        Ok("macos") => {
+            #[cfg(target_os = "macos")]
+            SwiftLinker::new("11.0")
+                .with_package("LoungyLibrary", "./swift-lib/")
+                .link();
+        }
+        _ => (),
+    };
+}

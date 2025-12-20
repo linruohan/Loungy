@@ -62,14 +62,14 @@ impl Numbat {
             if let Some(query) = query.view.upgrade() {
                 cx.subscribe(&query, move |subscriber: &mut Numbat, _, event, cx| {
                     if let TextEvent::Input { text } = event {
-                        let result =
-                            ctx.interpret(&rephraser(text), numbat::resolver::CodeSource::Text);
+                        let text = rephraser(&text);
+                        let result = ctx.interpret(&text, numbat::resolver::CodeSource::Text);
                         let formatter = PlainTextFormatter {};
                         subscriber.result = match result {
                             Ok((statements, result)) => {
                                 let s: Vec<String> = statements
                                     .iter()
-                                    .map(|s| formatter.format(&s.pretty_print(), false))
+                                    .map(|s| formatter.format(&s.pretty_print(), false).to_string())
                                     .collect();
                                 let s = s.join(" ");
                                 let result = &result.to_markup(
@@ -84,16 +84,16 @@ impl Numbat {
                                 for part in &result.0 {
                                     match part.1 {
                                         numbat::markup::FormatType::String => {
-                                            value = Some(part.2.clone())
+                                            value = Some(part.2.to_string())
                                         }
                                         numbat::markup::FormatType::Value => {
-                                            value = Some(part.2.clone());
+                                            value = Some(part.2.to_string());
                                         }
                                         numbat::markup::FormatType::TypeIdentifier => {
-                                            type_id = Some(part.2.clone());
+                                            type_id = Some(part.2.to_string());
                                         }
                                         numbat::markup::FormatType::Unit => {
-                                            unit = Some(part.2.clone());
+                                            unit = Some(part.2.to_string());
                                         }
                                         _ => {}
                                     }

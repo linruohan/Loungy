@@ -19,7 +19,6 @@ use gpui::App;
 use ipc::{client::client_connect, server::setup_socket};
 
 mod app;
-mod assets;
 mod commands;
 mod components;
 mod date;
