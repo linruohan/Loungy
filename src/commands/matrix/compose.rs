@@ -9,11 +9,10 @@
  *
  */
 
-use std::sync::Arc;
-
-use gpui::*;
+use gpui::{AnyView, WindowContext};
 use matrix_sdk::ruma::events::room::message::{ForwardThread, RoomMessageEventContent};
 use matrix_sdk_ui::{timeline::EventTimelineItem, Timeline};
+use std::sync::Arc;
 
 use crate::{
     command,

@@ -21,7 +21,11 @@ use anyhow::anyhow;
 use async_std::task::{spawn, spawn_blocking, JoinHandle};
 use futures::future::Shared;
 use futures::FutureExt;
-use gpui::*;
+use gpui::{
+    div, img, percentage, svg, Animation, AnimationExt, Hsla, ImageSource, IntoElement,
+    ParentElement, Render, RenderOnce, SharedUri, Styled, Transformation, View, ViewContext,
+    VisualContext, WindowContext,
+};
 use log::debug;
 use parking_lot::Mutex;
 use reqwest::StatusCode;

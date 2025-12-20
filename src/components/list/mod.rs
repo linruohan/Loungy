@@ -9,6 +9,12 @@
  *
  */
 
+use gpui::{
+    div, list, relative, AnyElement, AnyModel, AppContext, Context, EventEmitter, FontWeight,
+    InteractiveElement, IntoElement, ListAlignment, ListOffset, ListScrollEvent, ListState, Model,
+    MouseButton, ParentElement, Pixels, Render, RenderOnce, SharedString, Styled, View,
+    ViewContext, VisualContext, WindowContext,
+};
 use std::{
     collections::{hash_map::DefaultHasher, HashMap},
     hash::{Hash, Hasher},
@@ -19,7 +25,6 @@ use std::{
 
 pub mod nucleo;
 
-use gpui::*;
 use log::debug;
 
 use crate::{

@@ -9,12 +9,11 @@
  *
  */
 
-use gpui::*;
+use gpui::{AnyView, WindowContext};
+use regex::Regex;
 use std::{
     cmp::Reverse, collections::HashMap, fs, path::PathBuf, process::Command, time::Duration,
 };
-
-use regex::Regex;
 
 use crate::{
     command,

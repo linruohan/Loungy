@@ -8,8 +8,7 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
-use gpui::*;
+use gpui::{AnyView, WindowContext};
 use log::error;
 
 use crate::{

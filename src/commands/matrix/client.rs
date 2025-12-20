@@ -18,7 +18,7 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::*;
+use gpui::AsyncWindowContext;
 use matrix_sdk::{matrix_auth::MatrixSession, ruma::OwnedUserId, Client};
 use matrix_sdk_ui::sync_service::SyncService;
 use rand::Rng;

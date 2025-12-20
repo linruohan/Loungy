@@ -24,7 +24,11 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::*;
+use gpui::{
+    canvas, div, img, list, AnyView, AsyncAppContext, AvailableSpace, Bounds, FontWeight,
+    ImageSource, IntoElement, ListAlignment, ListState, Model, Render, ViewContext, WeakView,
+    WindowContext,
+};
 use image::{DynamicImage, ImageBuffer};
 use jiff::{Span, Timestamp, ToSpan};
 use log::error;

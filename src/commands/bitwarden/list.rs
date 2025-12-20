@@ -19,8 +19,8 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::*;
-use log::*;
+use gpui::{AnyView, AsyncWindowContext, Model, WindowContext};
+use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;

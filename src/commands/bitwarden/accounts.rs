@@ -13,7 +13,7 @@ use std::{fs, time::Duration};
 
 use async_std::channel::Sender;
 use bonsaidb::core::schema::SerializedCollection;
-use gpui::*;
+use gpui::{AnyView, EventEmitter, WindowContext};
 use log::error;
 
 use crate::{

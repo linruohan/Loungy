@@ -14,11 +14,14 @@ use async_std::{
     task::{sleep, spawn, JoinHandle},
 };
 use futures::{future::Shared, FutureExt};
+use gpui::{
+    div, img, AnyElement, AnyModel, AnyView, AsyncWindowContext, FontWeight, ImageSource,
+    IntoElement, MouseButton, MouseDownEvent, RenderOnce, WeakView, WindowContext,
+};
 use jiff::Timestamp;
 use std::{rc::Rc, sync::Arc, time::Duration};
 use url::Url;
 
-use gpui::*;
 use log::debug;
 use matrix_sdk::{
     ruma::{

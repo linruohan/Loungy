@@ -13,7 +13,7 @@ use std::{cmp::Reverse, collections::HashMap, sync::Arc};
 
 use async_std::{stream::StreamExt, task::spawn};
 use bonsaidb::core::schema::SerializedCollection;
-use gpui::*;
+use gpui::{AnyView, AsyncWindowContext, WeakView, WindowContext};
 use matrix_sdk::ruma::OwnedRoomId;
 use matrix_sdk_ui::{sync_service::State, timeline::RoomExt};
 

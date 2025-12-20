@@ -9,16 +9,18 @@
  *
  */
 
-use std::{any::Any, collections::HashMap};
-
-use gpui::*;
-
 use crate::{
     components::shared::{Icon, Img},
     query::{TextEvent, TextInputWeak},
     state::{Actions, LAction, Shortcut, StateViewContext},
     theme::Theme,
 };
+use gpui::{
+    div, list, Context, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment,
+    ListState, Model, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled, View,
+    ViewContext, VisualContext, WindowContext,
+};
+use std::{any::Any, collections::HashMap};
 
 #[derive(Clone)]
 pub struct Input {

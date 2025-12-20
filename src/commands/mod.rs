@@ -9,11 +9,10 @@
  *
  */
 
-use std::{collections::HashMap, rc::Rc};
-
-use gpui::*;
+use gpui::{AnyView, Global, WindowContext};
 use log::error;
 use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, rc::Rc};
 
 use crate::{
     command,

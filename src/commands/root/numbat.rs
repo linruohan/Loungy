@@ -8,8 +8,10 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
-use gpui::*;
+use gpui::{
+    div, svg, AnyElement, FontWeight, IntoElement, ParentElement, Render, Styled, View,
+    VisualContext, WindowContext,
+};
 use numbat::{
     markup::{Formatter, PlainTextFormatter},
     module_importer::BuiltinModuleImporter,

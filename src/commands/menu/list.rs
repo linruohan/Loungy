@@ -9,11 +9,10 @@
  *
  */
 
-use std::time::Duration;
-
-use gpui::*;
+use gpui::{AnyView, Keystroke, WindowContext};
 use serde::Deserialize;
 use serde_json::Value;
+use std::time::Duration;
 use swift_rs::{swift, SRData};
 
 use crate::{

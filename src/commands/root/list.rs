@@ -9,6 +9,7 @@
  *
  */
 
+use super::numbat::{Numbat, NumbatWrapper};
 use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder, RootCommands},
@@ -20,12 +21,10 @@ use crate::{
     state::{CommandTrait, LAction, StateViewBuilder, StateViewContext},
     window::LWindow,
 };
-use gpui::*;
+use gpui::{AnyView, ClipboardItem, WindowContext};
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
 use std::{collections::HashMap, time::Duration};
-
-use super::numbat::{Numbat, NumbatWrapper};
 
 #[derive(Clone)]
 pub struct RootListBuilder;
