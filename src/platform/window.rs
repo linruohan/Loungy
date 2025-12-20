@@ -11,7 +11,7 @@ use super::{AppData, ClipboardWatcher};
 // pub fn get_frontmost_application_data() -> Option<AppData> {
 //     None
 // }
-use crate::components::shared::Img;
+use crate::components::shared::{Icon, Img};
 use crate::paths::paths;
 use crate::window::LWindow;
 use gpui::{AsyncWindowContext, WindowContext};
@@ -85,7 +85,7 @@ pub fn get_application_data(path: &Path) -> Option<AppData> {
     Some(AppData {
         id,
         name: file_name,
-        icon: Img::default(), // 需要设置Windows图标加载逻辑
+        icon: Img::default().icon(Icon::DraftingCompass), // 需要设置Windows图标加载逻辑
         icon_path,
         keywords: vec![],
         tag: tag.to_string(),
