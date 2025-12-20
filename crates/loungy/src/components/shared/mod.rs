@@ -22,9 +22,9 @@ use async_std::task::{JoinHandle, spawn, spawn_blocking};
 use futures::FutureExt;
 use futures::future::Shared;
 use gpui::{
-    Animation, AnimationExt, Hsla, ImageSource, IntoElement, ParentElement, Render,
-    RenderOnce, SharedUri, Styled, Transformation, View, ViewContext, VisualContext, WindowContext,
-    div, img, percentage, svg,
+    Animation, AnimationExt, Hsla, ImageSource, IntoElement, ParentElement, Render, RenderOnce,
+    SharedUri, Styled, Transformation, View, ViewContext, VisualContext, WindowContext, div, img,
+    percentage, svg,
 };
 use log::debug;
 use parking_lot::Mutex;
