@@ -8,9 +8,10 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
-use gpui::*;
-use log::*;
+use gpui::{
+    AppContext, Global, Hsla, Rgba, SharedString, WindowAppearance, WindowBackgroundAppearance,
+};
+use log::error;
 use serde::{Deserialize, Serialize};
 
 use crate::{db::db, paths::paths};

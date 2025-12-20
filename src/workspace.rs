@@ -8,13 +8,14 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
-use gpui::*;
-
 use crate::components::shared::{Icon, Img};
 use crate::loader::ActiveLoaders;
 use crate::state::{StateItem, StateModel};
 use crate::theme::Theme;
+use gpui::{
+    div, InteractiveElement, IntoElement, MouseButton, ParentElement, Render, Styled, View,
+    ViewContext, VisualContext, WindowContext,
+};
 
 pub struct Workspace {
     state: StateModel,
@@ -34,7 +35,7 @@ impl Render for Workspace {
         let theme = cx.global::<Theme>();
         let stack: &Vec<StateItem> = self.state.inner.read(cx).stack.as_ref();
         let item = stack.last().unwrap();
-        let view = stack.iter().filter(|item| item.workspace).next_back().unwrap();
+        let view = stack.iter().rfind(|item| item.workspace).unwrap();
 
         let mut back = div();
         if stack.len() > 1 {

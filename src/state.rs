@@ -9,16 +9,6 @@
  *
  */
 
-use gpui::*;
-use log::debug;
-use parking_lot::{Mutex, MutexGuard};
-use serde::Deserialize;
-use std::{
-    ops::DerefMut,
-    rc::Rc,
-    time::{Duration, Instant},
-};
-
 use crate::{
     commands::root::list::RootListBuilder,
     components::{
@@ -28,6 +18,21 @@ use crate::{
     query::{TextEvent, TextInput, TextInputWeak},
     theme::{self, Theme},
     window::{LWindow, LWindowStyle},
+};
+use gpui::{
+    bounce, div, ease_in_out, relative, svg, Animation, AnimationExt, AnyElement, AnyModel,
+    AnyView, AppContext, AsyncWindowContext, BorrowAppContext, Bounds, Context, Div, FontWeight,
+    Global, Hsla, IntoElement, Keystroke, Model, Modifiers, ParentElement, Pixels, Point, Render,
+    RenderOnce, SharedString, Size, Styled, View, ViewContext, VisualContext, WeakView,
+    WindowContext,
+};
+use log::debug;
+use parking_lot::{Mutex, MutexGuard};
+use serde::Deserialize;
+use std::{
+    ops::DerefMut,
+    rc::Rc,
+    time::{Duration, Instant},
 };
 
 pub struct LazyMutex<T> {
@@ -190,20 +195,23 @@ impl Render for ToastState {
                             let mut bg = bg;
                             let alpha = 0.1 + delta / 20.0;
                             let now = Instant::now();
-                            let (left, alpha) = if fade_out.is_some() && now > fade_out.unwrap() {
-                                let delta =
-                                    now.duration_since(fade_out.unwrap()).as_secs_f32() / 0.3;
-                                if delta < 1.0 {
-                                    (ease_in_out(delta), alpha * ease_in_out(1.0 - delta))
-                                } else {
-                                    (1.0, 0.0)
+                            let (left, alpha) = match fade_out {
+                                Some(fade_out_time) if now > fade_out_time => {
+                                    let delta =
+                                        now.duration_since(fade_out_time).as_secs_f32() / 0.3;
+                                    if delta < 1.0 {
+                                        (ease_in_out(delta), alpha * ease_in_out(1.0 - delta))
+                                    } else {
+                                        (1.0, 0.0)
+                                    }
                                 }
-                            } else {
-                                let delta = now.duration_since(fade_in).as_secs_f32() / 0.3;
-                                if delta < 1.0 {
-                                    (-ease_in_out(1.0 - delta), alpha * ease_in_out(delta))
-                                } else {
-                                    (0.0, alpha)
+                                _ => {
+                                    let delta = now.duration_since(fade_in).as_secs_f32() / 0.3;
+                                    if delta < 1.0 {
+                                        (-ease_in_out(1.0 - delta), alpha * ease_in_out(delta))
+                                    } else {
+                                        (0.0, alpha)
+                                    }
                                 }
                             };
 

@@ -8,9 +8,6 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-
-use gpui::*;
-
 use crate::ipc::server::PlatformListener;
 use crate::{
     assets::Assets,
@@ -21,6 +18,7 @@ use crate::{
     window::{LWindow, LWindowStyle},
     workspace::Workspace,
 };
+use gpui::{AppContext, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
 
 pub fn run_app(listener: PlatformListener, app: gpui::App) {
     app.with_assets(Assets).run(move |cx: &mut AppContext| {
