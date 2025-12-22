@@ -9,7 +9,7 @@
  *
  */
 
-use gpui::{AnyView, Global, WindowContext};
+use gpui::{AnyEntity, App, Global, Window};
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, rc::Rc};
@@ -82,7 +82,7 @@ impl RootCommand {
 }
 
 pub trait RootCommandBuilder: CommandTrait {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand;
+    fn build(&self, cx: &mut App) -> RootCommand;
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -91,7 +91,7 @@ pub struct RootCommands {
 }
 
 impl RootCommands {
-    pub fn init(cx: &mut WindowContext) {
+    pub fn init(cx: &mut App) {
         let commands: Vec<Box<dyn RootCommandBuilder>> = vec![
             Box::new(list::LoungyCommandBuilder),
             #[cfg(target_os = "macos")]
@@ -116,7 +116,7 @@ impl RootCommands {
         }
         cx.set_global(Self { commands: map });
     }
-    pub fn list(cx: &mut WindowContext) -> Vec<Item> {
+    pub fn list(cx: &mut App) -> Vec<Item> {
         let commands = cx.global::<Self>().commands.clone();
         let items: Vec<Item> = commands
             .values()
@@ -178,7 +178,7 @@ pub struct HotkeyBuilder {
 }
 command!(HotkeyBuilder);
 impl StateViewBuilder for HotkeyBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         let id = self.id.clone();
         let value = HotkeyManager::get(&id).map(Shortcut::new);
         Form::new(

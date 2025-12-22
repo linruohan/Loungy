@@ -13,7 +13,7 @@ use std::{fs, time::Duration};
 
 use async_std::channel::Sender;
 use bonsaidb::core::schema::SerializedCollection;
-use gpui::{AnyView, EventEmitter, WindowContext};
+use gpui::{AnyEntity, App, EventEmitter, Window};
 use log::error;
 
 use crate::{
@@ -38,7 +38,7 @@ pub(super) struct BitwardenPasswordPromptBuilder {
 command!(BitwardenPasswordPromptBuilder);
 
 impl StateViewBuilder for BitwardenPasswordPromptBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         let password = self.password.clone();
         Form::new(
             vec![
@@ -70,7 +70,7 @@ impl StateViewBuilder for BitwardenPasswordPromptBuilder {
             ],
             move |values, _, cx| {
                 let password = password.clone();
-                cx.spawn(|mut cx| async move {
+                cx.spawn(async move |cx| {
                     let remember = matches!(
                         values["remember_password"]
                             .value::<String>()
@@ -107,7 +107,7 @@ impl EventEmitter<Self> for BitwardenPasswordPromptBuilder {}
 pub struct BitwardenAccountFormBuilder;
 command!(BitwardenAccountFormBuilder);
 impl StateViewBuilder for BitwardenAccountFormBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         Form::new(
             vec![
                 Input::new(
@@ -174,7 +174,7 @@ impl StateViewBuilder for BitwardenAccountFormBuilder {
                         .error("Account Identifier already used", cx);
                 }
                 let mut actions = actions.clone();
-                cx.spawn(|mut cx| async move {
+                cx.spawn(async move |cx| {
                     actions.toast.loading("Saving account...", &mut cx);
 
                     let mut account = BitwardenAccount {
@@ -219,7 +219,7 @@ impl StateViewBuilder for BitwardenAccountFormBuilder {
 pub struct BitwardenAccountListBuilder;
 command!(BitwardenAccountListBuilder);
 impl StateViewBuilder for BitwardenAccountListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Search your accounts...", cx);
         context.actions.update_global(
             vec![LAction::new(
@@ -311,7 +311,7 @@ impl StateViewBuilder for BitwardenAccountListBuilder {
 pub struct BitwardenAccountCommandBuilder;
 command!(BitwardenAccountCommandBuilder);
 impl RootCommandBuilder for BitwardenAccountCommandBuilder {
-    fn build(&self, _: &mut WindowContext) -> RootCommand {
+    fn build(&self, _: &mut Window) -> RootCommand {
         RootCommand::new(
             "bitwarden_accounts",
             "Search Vault",

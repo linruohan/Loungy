@@ -9,7 +9,7 @@
  *
  */
 
-use gpui::{AnyView, WindowContext};
+use gpui::{AnyEntity, App, Window};
 use regex::Regex;
 use std::{
     cmp::Reverse, collections::HashMap, fs, path::PathBuf, process::Command, time::Duration,
@@ -74,7 +74,7 @@ pub struct ProcessListBuilder;
 command!(ProcessListBuilder);
 
 impl StateViewBuilder for ProcessListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context
             .query
             .set_placeholder("Search for running processes...", cx);
@@ -221,7 +221,7 @@ pub struct ProcessCommandBuilder;
 command!(ProcessCommandBuilder);
 
 impl RootCommandBuilder for ProcessCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut Window) -> RootCommand {
         RootCommand::new(
             "task_manager",
             "Search Processes",

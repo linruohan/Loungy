@@ -9,7 +9,7 @@
  *
  */
 
-use gpui::{AnyView, WindowContext};
+use gpui::{AnyEntity, App, Window};
 use matrix_sdk::ruma::events::room::message::{ForwardThread, RoomMessageEventContent};
 use matrix_sdk_ui::{Timeline, timeline::EventTimelineItem};
 use std::sync::Arc;
@@ -63,7 +63,7 @@ impl Compose {
 }
 command!(Compose);
 impl StateViewBuilder for Compose {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Type a message...", cx);
 
         let query = context.query.clone();
@@ -83,7 +83,7 @@ impl StateViewBuilder for Compose {
                     query.set_text("", cx);
                     let mut toast = this.toast.clone();
                     let self_clone = self_clone.clone();
-                    cx.spawn(|mut cx| async move {
+                    cx.spawn(async move |cx| {
                         let content = RoomMessageEventContent::text_markdown(text);
                         if self_clone.send(content).await.is_ok() {
                             toast.success("Messagen sent", &mut cx);

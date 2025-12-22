@@ -14,7 +14,7 @@ use std::fmt;
 use gpui::SharedString;
 use serde::{Deserialize, Serialize};
 
-fn to_kebap(s: &str) -> String {
+fn to_kebab(s: &str) -> String {
     s.chars().fold(String::new(), |mut s, c| {
         if c.is_uppercase() || c.is_numeric() {
             if !s.is_empty() {
@@ -30,7 +30,7 @@ fn to_kebap(s: &str) -> String {
 
 impl Icon {
     pub fn path(&self) -> SharedString {
-        let name = to_kebap(self.to_string().as_str());
+        let name = to_kebab(self.to_string().as_str());
         SharedString::from(format!("icons/{}.svg", name))
     }
 }
@@ -918,7 +918,7 @@ pub enum Icon {
     UserRoundMinus,
     AlignVerticalDistributeCenter,
     SearchSlash,
-    View,
+    Entity,
     ArrowBigDownDash,
     MessageSquarePlus,
     RadioReceiver,

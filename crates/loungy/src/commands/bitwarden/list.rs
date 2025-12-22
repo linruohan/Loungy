@@ -19,7 +19,7 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::{AnyView, AsyncWindowContext, Model, WindowContext};
+use gpui::{AnyEntity, App, AsyncApp, Entity, Window};
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -45,11 +45,11 @@ use super::accounts::{
 
 #[derive(Clone)]
 pub struct BitwardenListBuilder {
-    view: View<AsyncListItems>,
+    view: Entity<AsyncListItems>,
 }
 command!(BitwardenListBuilder);
 impl StateViewBuilder for BitwardenListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Search your vault...", cx);
         if let Ok(accounts) = BitwardenAccount::all(db()).query() {
             if accounts.len() > 1 {
@@ -226,12 +226,12 @@ impl BitwardenAccount {
     pub async fn auth_command(
         &mut self,
         args: Vec<&str>,
-        cx: &mut AsyncWindowContext,
+        cx: &mut AsyncApp,
     ) -> anyhow::Result<Output> {
         self.unlock(cx).await?;
         self.command(args).await
     }
-    pub async fn unlock(&mut self, cx: &mut AsyncWindowContext) -> anyhow::Result<()> {
+    pub async fn unlock(&mut self, cx: &mut AsyncApp) -> anyhow::Result<()> {
         // TODO: if there is no password, we need to prompt for it
         let status = self
             .command(vec!["status", "--raw", "--nointeraction"])
@@ -314,15 +314,11 @@ pub(super) fn db() -> &'static Database {
 }
 
 struct EntryModel {
-    inner: Model<(Vec<String>, HashMap<String, String>)>,
+    inner: Entity<(Vec<String>, HashMap<String, String>)>,
 }
 
 impl EntryModel {
-    pub fn new(
-        account: &BitwardenAccount,
-        item: &BitwardenItem,
-        cx: &mut AsyncWindowContext,
-    ) -> Self {
+    pub fn new(account: &BitwardenAccount, item: &BitwardenItem, cx: &mut AsyncApp) -> Self {
         let window = cx.window_handle();
         Self {
             inner: cx
@@ -384,7 +380,7 @@ impl EntryModel {
 }
 command!(BitwardenCommandBuilder);
 impl RootCommandBuilder for BitwardenCommandBuilder {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let accounts = BitwardenAccount::all(db()).query().unwrap_or_default();
             for account in accounts {

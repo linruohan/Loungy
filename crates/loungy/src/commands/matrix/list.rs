@@ -13,7 +13,7 @@ use std::{cmp::Reverse, collections::HashMap, sync::Arc};
 
 use async_std::{stream::StreamExt, task::spawn};
 use bonsaidb::core::schema::SerializedCollection;
-use gpui::{AnyView, AsyncWindowContext, WeakView, WindowContext};
+use gpui::{AnyEntity, App, AsyncApp, Entity, WeakEntity, Window};
 use matrix_sdk::ruma::OwnedRoomId;
 use matrix_sdk_ui::{sync_service::State, timeline::RoomExt};
 
@@ -39,12 +39,12 @@ use super::{
 
 #[derive(Clone)]
 struct RoomList {
-    view: View<AsyncListItems>,
+    view: Entity<AsyncListItems>,
 }
 
 command!(RoomList);
 impl StateViewBuilder for RoomList {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Search your rooms...", cx);
         if let Ok(accounts) = Session::all(db()).query() {
             if accounts.len() > 1 {
@@ -81,11 +81,7 @@ impl StateViewBuilder for RoomList {
 
 pub struct MatrixCommandBuilder;
 
-async fn sync(
-    session: Session,
-    view: WeakView<AsyncListItems>,
-    mut cx: AsyncWindowContext,
-) -> Result<()> {
+async fn sync(session: Session, view: WeakEntity<AsyncListItems>, mut cx: AsyncApp) -> Result<()> {
     let (client, ss) = {
         let session = session.clone();
         spawn(async move { session.load().await }).await?
@@ -234,7 +230,7 @@ async fn sync(
 }
 command!(MatrixCommandBuilder);
 impl RootCommandBuilder for MatrixCommandBuilder {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let db = db();
             let sessions = Session::all(db).query().unwrap_or_default();

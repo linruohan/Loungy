@@ -15,8 +15,8 @@ use async_std::{
 };
 use futures::{FutureExt, future::Shared};
 use gpui::{
-    AnyElement, AnyModel, AnyView, AsyncWindowContext, FontWeight, ImageSource, IntoElement,
-    MouseButton, MouseDownEvent, RenderOnce, WeakView, WindowContext, div, img,
+    AnyElement, AnyEntity, App, AsyncApp, FontWeight, ImageSource, IntoElement, MouseButton,
+    MouseDownEvent, RenderOnce, WeakEntity, Window, div, img,
 };
 use jiff::Timestamp;
 use std::{rc::Rc, sync::Arc, time::Duration};
@@ -66,8 +66,8 @@ pub(super) struct ChatRoom {
     pub(super) room: Arc<Room>,
 }
 
-pub trait OnMouseDown: Fn(&MouseDownEvent, &mut WindowContext) + 'static {}
-impl<F> OnMouseDown for F where F: Fn(&MouseDownEvent, &mut WindowContext) + 'static {}
+pub trait OnMouseDown: Fn(&MouseDownEvent, &mut Window) + 'static {}
+impl<F> OnMouseDown for F where F: Fn(&MouseDownEvent, &mut Window) + 'static {}
 
 #[derive(Clone)]
 pub(super) struct Reaction {
@@ -81,7 +81,7 @@ pub(super) struct Reaction {
 pub(super) struct Reactions(Vec<Reaction>);
 
 impl RenderOnce for Reactions {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<LTheme>();
         div().flex().children(self.0.into_iter().map(|reaction| {
             div()
@@ -126,7 +126,7 @@ pub(super) enum MessageContent {
 }
 
 impl RenderOnce for MessageContent {
-    fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _cx: &mut Window) -> impl IntoElement {
         match self {
             MessageContent::Text(t) => t.into_any_element(),
             MessageContent::Image(i) => img(i).w_64().h_48().into_any_element(),
@@ -148,7 +148,7 @@ pub(super) struct Message {
     pub first: bool,
     pub last: bool,
     pub in_reply_to: Option<String>,
-    pub meta: AnyModel,
+    pub meta: AnyEntity,
 }
 
 impl Message {
@@ -201,7 +201,7 @@ impl Message {
                             let event = this.get_meta::<EventTimelineItem>(cx).unwrap();
                             let mut toast = this.toast.clone();
                             let room = room.clone();
-                            cx.spawn(|mut cx| async move {
+                            cx.spawn(async move |cx| {
                                 match room.redact(event.event_id().unwrap(), None, None).await {
                                     Ok(_) => {
                                         toast.success("Message deleted", &mut cx);
@@ -225,7 +225,7 @@ impl Message {
 }
 
 impl ItemComponent for Message {
-    fn render(&self, selected: bool, cx: &WindowContext) -> AnyElement {
+    fn render(&self, selected: bool, cx: &App) -> AnyElement {
         let theme = cx.global::<LTheme>();
         let show_avatar = !self.me && self.first;
         let show_reactions = !self.reactions.0.is_empty();
@@ -332,8 +332,8 @@ fn get_source(
 async fn sync(
     timeline: Arc<Timeline>,
     room: Arc<Room>,
-    view: WeakView<AsyncListItems>,
-    cx: &mut AsyncWindowContext,
+    view: WeakEntity<AsyncListItems>,
+    cx: &mut AsyncApp,
 ) -> anyhow::Result<()> {
     let (mut messages, mut stream) = timeline.subscribe().await;
     let client = room.client();
@@ -460,7 +460,7 @@ async fn sync(
 
 command!(ChatRoom);
 impl StateViewBuilder for ChatRoom {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Search this chat...", cx);
 
         let view = cx.new_view(|cx| {

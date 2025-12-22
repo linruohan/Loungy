@@ -16,9 +16,8 @@ use crate::{
     theme::LTheme,
 };
 use gpui::{
-    Context, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment, ListState,
-    Model, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext, div, list,
+    App, Context, Entity, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment,
+    ListState, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled, Window, div, list,
 };
 use std::{any::Any, collections::HashMap};
 
@@ -32,12 +31,7 @@ pub struct Input {
 }
 
 impl Input {
-    pub fn new(
-        id: impl ToString,
-        label: impl ToString,
-        kind: InputKind,
-        _: &mut WindowContext,
-    ) -> Self {
+    pub fn new(id: impl ToString, label: impl ToString, kind: InputKind, _: &mut App) -> Self {
         Self {
             id: id.to_string(),
             label: label.to_string(),
@@ -68,11 +62,11 @@ pub struct InputView {
     input: TextInputWeak,
     focused: bool,
     index: usize,
-    focus_model: Model<usize>,
+    focus_model: Entity<usize>,
 }
 
 impl Render for InputView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         //cx.focus(&self.focus_handle);
         let theme = cx.global::<LTheme>();
         let fm = self.focus_model.clone();
@@ -197,7 +191,7 @@ impl Render for InputView {
                     div().into_any_element()
                 },
             ))
-            .on_mouse_down(MouseButton::Left, move |_, cx| {
+            .on_mouse_down(MouseButton::Left, move |_, _, cx| {
                 fm.update(cx, |this, cx| {
                     *this = index;
                     cx.notify();
@@ -207,7 +201,7 @@ impl Render for InputView {
 }
 
 impl InputView {
-    pub fn on_focus(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn on_focus(&mut self, cx: &mut Context<Self>) {
         //
         match self.inner.kind.clone() {
             InputKind::TextField {
@@ -223,11 +217,11 @@ impl InputView {
             InputKind::Shortcut { .. } => self.input.set_text("Record hotkey", cx),
         };
     }
-    pub fn on_blur(&mut self, _: &mut ViewContext<Self>) {
+    pub fn on_blur(&mut self, _: &mut Context<Self>) {
         self.inner.show_error = true;
         self.inner.validate();
     }
-    pub fn on_query(&mut self, event: &TextEvent, cx: &mut ViewContext<Self>) {
+    pub fn on_query(&mut self, event: &TextEvent, cx: &mut Context<Self>) {
         match self.inner.kind.clone() {
             InputKind::TextField {
                 validate,
@@ -284,7 +278,7 @@ impl InputView {
             }
         }
         if let TextEvent::KeyDown(e) = event {
-            if (Shortcut::new("tab").shift().get()).eq(&e.keystroke) {
+            if Shortcut::new("tab").shift().get().eq(&e.keystroke) {
                 self.focus_model.update(cx, |this, cx| {
                     if this > &mut 0 {
                         *this -= 1;
@@ -292,7 +286,7 @@ impl InputView {
                     }
                 })
                 //
-            } else if (Shortcut::new("tab").get()).eq(&e.keystroke) {
+            } else if Shortcut::new("tab").get().eq(&e.keystroke) {
                 self.focus_model.update(cx, |this, cx| {
                     *this += 1;
                     cx.notify();
@@ -304,9 +298,9 @@ impl InputView {
         input: Input,
         query: TextInputWeak,
         index: usize,
-        focus_model: Model<usize>,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
+        focus_model: Entity<usize>,
+        cx: &mut App,
+    ) -> Entity<Self> {
         cx.new_view(|cx| {
             cx.observe(&focus_model, move |input: &mut InputView, focused, cx| {
                 let old = input.focused;
@@ -360,7 +354,7 @@ pub enum InputKind {
     },
 }
 
-pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut WindowContext) {
+pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut Window) {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
         Self: 'a;
@@ -368,7 +362,7 @@ pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut WindowContext
 
 impl<F> SubmitFn for F
 where
-    F: Fn(HashMap<String, Input>, &mut LActions, &mut WindowContext) + Clone,
+    F: Fn(HashMap<String, Input>, &mut LActions, &mut Window) + Clone,
 {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
@@ -386,6 +380,7 @@ impl<'a> Clone for Box<dyn 'a + SubmitFn> {
 
 pub struct Form {
     list: ListState,
+    inputs: Vec<Entity<InputView>>,
 }
 
 impl Form {
@@ -393,10 +388,10 @@ impl Form {
         inputs: Vec<Input>,
         submit: impl SubmitFn + 'static,
         context: &mut StateViewContext,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
-        let focus_model: Model<usize> = cx.new_model(|_| 0);
-        let inputs: Vec<View<InputView>> = inputs
+        cx: &mut App,
+    ) -> Entity<Self> {
+        let focus_model: Entity<usize> = cx.new_model(|_| 0);
+        let inputs: Vec<Entity<InputView>> = inputs
             .into_iter()
             .enumerate()
             .map(|(i, input)| {
@@ -444,21 +439,22 @@ impl Form {
         }
 
         cx.new_view(|_| Self {
-            list: ListState::new(
-                inputs.len(),
-                ListAlignment::Top,
-                Pixels(100.0),
-                move |i, _| div().child(inputs[i].clone()).py_2().into_any_element(),
-            ),
+            list: ListState::new(inputs.len(), ListAlignment::Top, Pixels(100.0)),
+            inputs,
         })
     }
 }
 
 impl Render for Form {
-    fn render(&mut self, _: &mut ViewContext<Self>) -> impl IntoElement {
-        div()
-            .p_4()
-            .size_full()
-            .child(list(self.list.clone()).size_full())
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div().p_4().size_full().child(
+            list(self.list.clone(), move |i, _| {
+                div()
+                    .child(self.inputs[i].clone())
+                    .py_2()
+                    .into_any_element()
+            })
+            .size_full(),
+        )
     }
 }

@@ -25,9 +25,8 @@ use bonsaidb::{
     local::Database,
 };
 use gpui::{
-    AnyView, AsyncAppContext, AvailableSpace, Bounds, FontWeight, ImageSource, IntoElement,
-    ListAlignment, ListState, Model, Render, ViewContext, WeakView, WindowContext, canvas, div,
-    img, list,
+    AnyEntity, App, AsyncApp, AvailableSpace, Bounds, Context, Entity, FontWeight, ImageSource,
+    IntoElement, ListAlignment, ListState, Render, WeakEntity, Window, canvas, div, img, list,
 };
 use image::{DynamicImage, ImageBuffer};
 use jiff::{Span, Timestamp, ToSpan};
@@ -58,11 +57,11 @@ use crate::{
 
 #[derive(Clone)]
 pub struct ClipboardListBuilder {
-    view: View<AsyncListItems>,
+    view: Entity<AsyncListItems>,
 }
 command!(ClipboardListBuilder);
 impl StateViewBuilder for ClipboardListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context
             .query
             .set_placeholder("Search your clipboard history...", cx);
@@ -223,7 +222,7 @@ impl ClipboardListItem {
 
         item
     }
-    fn get_item(&self, cx: &mut ViewContext<AsyncListItems>) -> Item {
+    fn get_item(&self, cx: &mut Context<AsyncListItems>) -> Item {
         ItemBuilder::new(
             self.id,
             ListItem::new(
@@ -342,7 +341,7 @@ impl ClipboardListItem {
         .meta(cx.new_model(|_| self.copied_last).into_any())
         .build()
     }
-    fn delete(&self, view: WeakView<AsyncListItems>, cx: &mut WindowContext) -> anyhow::Result<()> {
+    fn delete(&self, view: WeakEntity<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
         let _ = view.update(cx, |view, cx| {
             view.remove(self.kind.clone().into(), self.id, cx);
         });
@@ -361,11 +360,7 @@ impl ClipboardListItem {
         }
         Ok(())
     }
-    fn prune(
-        age: Span,
-        view: WeakView<AsyncListItems>,
-        cx: &mut WindowContext,
-    ) -> anyhow::Result<()> {
+    fn prune(age: Span, view: WeakEntity<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
         let items = Self::all(db_items()).query()?;
         for item in items {
             if item.contents.copied_last < Timestamp::now().checked_sub(age).unwrap() {
@@ -382,12 +377,12 @@ struct ClipboardPreview {
     id: u64,
     item: ClipboardListItem,
     detail: ClipboardDetail,
-    bounds: Model<Bounds<Pixels>>,
+    bounds: Entity<Bounds<Pixels>>,
     state: ListState,
 }
 
 impl ClipboardPreview {
-    fn init(id: u64, cx: &mut WindowContext) -> Self {
+    fn init(id: u64, cx: &mut App) -> Self {
         let item = ClipboardListItem::get(&id, db_items())
             .unwrap()
             .unwrap()
@@ -459,7 +454,7 @@ impl ClipboardPreview {
 }
 
 impl Render for ClipboardPreview {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<LTheme>();
 
         let mut table = vec![
@@ -590,7 +585,7 @@ impl Render for ClipboardPreview {
 command!(ClipboardPreview);
 
 impl StateViewBuilder for ClipboardPreview {
-    fn build(&self, _context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, _context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         cx.new_view(|_| self.clone()).into()
     }
 }
@@ -608,7 +603,7 @@ pub(super) fn db_detail() -> &'static Database {
 pub struct ClipboardCommandBuilder;
 command!(ClipboardCommandBuilder);
 impl RootCommandBuilder for ClipboardCommandBuilder {
-    fn build(&self, cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, cx: &mut App) -> RootCommand {
         let view = cx.new_view(|cx| {
             let mut list_items = AsyncListItems::new();
             let items = ClipboardListItem::all(db_items())
@@ -643,7 +638,7 @@ impl RootCommandBuilder for ClipboardCommandBuilder {
                         }
 
                         let app = get_frontmost_application_data();
-                        let condition = |app: &Option<AppData>, cx: &mut AsyncAppContext| {
+                        let condition = |app: &Option<AppData>, cx: &mut AsyncApp| {
                             if !ClipboardWatcher::is_enabled(cx) {
                                 ClipboardWatcher::enabled(cx);
                                 return false;

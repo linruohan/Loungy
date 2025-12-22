@@ -21,16 +21,17 @@ use crate::{
     state::{CommandTrait, LAction, StateViewBuilder, StateViewContext},
     window::LWindow,
 };
-use gpui::{AnyView, ClipboardItem, WindowContext};
+use gpui::{AnyEntity, App, ClipboardItem, Window};
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
+use std::process::id;
 use std::{collections::HashMap, time::Duration};
 
 #[derive(Clone)]
 pub struct RootListBuilder;
 command!(RootListBuilder);
 impl StateViewBuilder for RootListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context
             .query
             .set_placeholder("Search for apps and commands...", cx);
@@ -61,7 +62,7 @@ impl StateViewBuilder for RootListBuilder {
                                 "Copy",
                                 None,
                                 {
-                                    move |this, cx: &mut WindowContext| {
+                                    move |this, cx: &mut App| {
                                         cx.write_to_clipboard(ClipboardItem::new_string(
                                             result.result.to_string(),
                                         ));
@@ -209,7 +210,7 @@ impl StateViewBuilder for RootListBuilder {
             );
 
         let list_clone = list.clone();
-        cx.spawn(|mut cx| async move {
+        cx.spawn(async move |cx| {
             let (tx, rx) = std::sync::mpsc::channel();
             let mut debouncer = new_debouncer(Duration::from_secs(1), None, tx).unwrap();
 
@@ -239,7 +240,7 @@ impl StateViewBuilder for RootListBuilder {
 pub struct LoungyCommandBuilder;
 command!(LoungyCommandBuilder);
 impl RootCommandBuilder for LoungyCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut Window) -> RootCommand {
         RootCommand::new(
             "loungy",
             "Loungy",

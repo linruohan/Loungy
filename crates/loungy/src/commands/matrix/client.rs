@@ -18,7 +18,7 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::AsyncWindowContext;
+use gpui::AsyncApp;
 use matrix_sdk::{Client, matrix_auth::MatrixSession, ruma::OwnedUserId};
 use matrix_sdk_ui::sync_service::SyncService;
 use rand::Rng;
@@ -73,7 +73,7 @@ impl Session {
         username: String,
         password: String,
         mut actions: LActions,
-        cx: &mut AsyncWindowContext,
+        cx: &mut AsyncApp,
     ) -> anyhow::Result<()> {
         let passphrase: Vec<u8> = rand::thread_rng()
             .sample_iter(&rand::distributions::Alphanumeric)

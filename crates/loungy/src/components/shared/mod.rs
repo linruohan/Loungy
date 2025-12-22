@@ -22,9 +22,9 @@ use async_std::task::{JoinHandle, spawn, spawn_blocking};
 use futures::FutureExt;
 use futures::future::Shared;
 use gpui::{
-    Animation, AnimationExt, Hsla, ImageSource, IntoElement, ParentElement, Render, RenderOnce,
-    SharedUri, Styled, Transformation, View, ViewContext, VisualContext, WindowContext, div, img,
-    percentage, svg,
+    Animation, AnimationExt, App, Context, Entity, Hsla, ImageSource, IntoElement, ParentElement,
+    Render, RenderOnce, Resource, SharedUri, Styled, StyledImage, Transformation, VisualContext,
+    Window, div, img, percentage, svg,
 };
 use log::debug;
 use parking_lot::Mutex;
@@ -51,7 +51,7 @@ pub enum ImgSource {
     Base(ImageSource),
     Icon { icon: Icon, color: Option<Hsla> },
     Dot(Hsla),
-    Favicon(View<Favicon>),
+    Favicon(Entity<Favicon>),
     None,
 }
 
@@ -130,17 +130,19 @@ impl Img {
         self.src = ImgSource::Dot(color);
         self
     }
-    pub fn favicon(mut self, url: impl ToString, fallback: Icon, cx: &mut WindowContext) -> Self {
+    pub fn favicon(mut self, url: impl ToString, fallback: Icon, cx: &mut App) -> Self {
         let favicon = Favicon::new(&self, url, fallback, cx);
         self.src = ImgSource::Favicon(favicon);
         self
     }
     pub fn file(mut self, src: PathBuf) -> Self {
-        self.src = ImgSource::Base(ImageSource::File(Arc::new(src)));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::Path(src.into())));
         self
     }
     pub fn url(mut self, src: impl ToString) -> Self {
-        self.src = ImgSource::Base(ImageSource::Uri(SharedUri::from(src.to_string())));
+        self.src = ImgSource::Base(ImageSource::Resource(Resource::Uri(SharedUri::from(
+            src.to_string(),
+        ))));
         self
     }
     pub fn mask(mut self, mask: ImgMask) -> Self {
@@ -154,7 +156,7 @@ impl Img {
 }
 
 impl RenderOnce for Img {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         if let ImgSource::Favicon(favicon) = &self.src {
             return favicon.clone().into_any_element();
         }
@@ -227,7 +229,7 @@ impl RenderOnce for Img {
 pub struct NoView;
 
 impl Render for NoView {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         div()
     }
 }
@@ -246,7 +248,7 @@ pub struct Favicon {
 
 impl Favicon {
     async fn find_favicon(url: String) -> Result<SharedUri, anyhow::Error> {
-        let base_url = Url::parse(&url).unwrap();
+        let base_url = Url::parse(&url)?;
         let mut targets = vec![base_url.clone()];
         // if subdomain
         if let Some(domain) = base_url.domain() {
@@ -281,10 +283,13 @@ impl Favicon {
                     .collect()
             }).await;
 
-            hrefs.append(&mut vec![format!("/favicon.svg"), format!("/favicon.ico")]);
+            hrefs.append(&mut vec![
+                "/favicon.svg".to_string(),
+                "/favicon.ico".to_string(),
+            ]);
 
             for href in hrefs {
-                let absolute = Url::parse(&href).unwrap_or(url.join(&href).unwrap());
+                let absolute = Url::parse(&href).unwrap_or(url.join(&href)?);
                 let Ok(response) = client.get(absolute.to_string()).send().await else {
                     continue;
                 };
@@ -309,12 +314,7 @@ impl Favicon {
 
         Err(anyhow!("No favicon found for {}", url))
     }
-    pub fn new(
-        img: &Img,
-        url: impl ToString,
-        fallback: Icon,
-        cx: &mut WindowContext,
-    ) -> View<Self> {
+    pub fn new(img: &Img, url: impl ToString, fallback: Icon, cx: &mut App) -> Entity<Self> {
         let url = 'url: {
             let Ok(url) = Url::parse(&url.to_string()) else {
                 break 'url String::new();
@@ -342,7 +342,7 @@ impl Favicon {
 }
 
 impl Render for Favicon {
-    fn render(&mut self, _cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         if let Some(task) = self
             .task
             .get_or_init(|| {

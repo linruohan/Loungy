@@ -20,7 +20,7 @@ use crate::{
     state::{CommandTrait, LAction, Shortcut, StateModel, StateViewBuilder, StateViewContext},
     theme::{LTheme, ThemeSettings},
 };
-use gpui::{AnyView, BorrowAppContext, WindowBackgroundAppearance, WindowContext};
+use gpui::{AnyEntity, App, BorrowAppContext, Window, WindowBackgroundAppearance};
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -28,7 +28,7 @@ pub struct ThemeListBuilder;
 command!(ThemeListBuilder);
 
 impl StateViewBuilder for ThemeListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Search for themes...", cx);
         ListBuilder::new()
             .interval(Duration::from_secs(10))
@@ -139,7 +139,7 @@ pub struct ThemeCommandBuilder;
 command!(ThemeCommandBuilder);
 
 impl RootCommandBuilder for ThemeCommandBuilder {
-    fn build(&self, _cx: &mut WindowContext) -> RootCommand {
+    fn build(&self, _cx: &mut Window) -> RootCommand {
         RootCommand::new(
             "themes",
             "Search Themes",

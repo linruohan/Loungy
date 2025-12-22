@@ -8,7 +8,7 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-use gpui::{AnyView, WindowContext};
+use gpui::{AnyEntity, App, Window};
 use log::error;
 
 use crate::{
@@ -23,7 +23,7 @@ use super::client::Session;
 pub struct AccountCreationBuilder;
 command!(AccountCreationBuilder);
 impl StateViewBuilder for AccountCreationBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut WindowContext) -> AnyView {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Login...", cx);
         Form::new(
             vec![

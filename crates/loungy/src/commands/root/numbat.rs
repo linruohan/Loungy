@@ -9,11 +9,10 @@
  *
  */
 use gpui::{
-    AnyElement, FontWeight, IntoElement, ParentElement, Render, Styled, View, VisualContext,
-    WindowContext, div, svg,
+    AnyElement, App, AppContext, Context, Entity, FontWeight, IntoElement, ParentElement, Render,
+    Styled, Window, div, svg,
 };
 use numbat::{
-    Context,
     markup::{Formatter, PlainTextFormatter},
     module_importer::BuiltinModuleImporter,
     pretty_print::PrettyPrint,
@@ -51,11 +50,11 @@ fn rephraser(s: &str) -> String {
 }
 
 impl Numbat {
-    pub fn init(query: &TextInputWeak, cx: &mut WindowContext) -> View<Numbat> {
+    pub fn init(query: &TextInputWeak, cx: &mut App) -> Entity<Numbat> {
         let importer = BuiltinModuleImporter::default();
-        let mut ctx = Context::new(importer);
+        let mut ctx = numbat::Context::new(importer);
         ctx.load_currency_module_on_demand(true);
-        Context::prefetch_exchange_rates();
+        numbat::Context::prefetch_exchange_rates();
         let _ = ctx.interpret("use prelude", numbat::resolver::CodeSource::Text);
 
         cx.new_view(move |cx| {
@@ -120,17 +119,17 @@ impl Numbat {
 
 #[derive(Clone)]
 pub struct NumbatWrapper {
-    pub inner: View<Numbat>,
+    pub inner: Entity<Numbat>,
 }
 
 impl ItemComponent for NumbatWrapper {
-    fn render(&self, _selected: bool, _cx: &WindowContext) -> AnyElement {
+    fn render(&self, _selected: bool, _cx: &Window) -> AnyElement {
         self.inner.clone().into_any_element()
     }
 }
 
 impl Render for Numbat {
-    fn render(&mut self, cx: &mut gpui::ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<LTheme>();
         if self.result.is_none() {
             return div();
