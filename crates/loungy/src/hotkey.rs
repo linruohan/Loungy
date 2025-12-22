@@ -19,7 +19,7 @@ use global_hotkey::{
     GlobalHotKeyEvent, GlobalHotKeyManager,
     hotkey::{Code, HotKey, Modifiers},
 };
-use gpui::{BorrowAppContext, Global, Keystroke, WindowContext};
+use gpui::{App, BorrowAppContext, Global, Keystroke};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -43,7 +43,7 @@ fn db() -> &'static Database {
 }
 
 impl HotkeyManager {
-    pub fn init(cx: &mut WindowContext) {
+    pub fn init(cx: &mut App) {
         let manager = GlobalHotKeyManager::new().unwrap();
         let receiver = GlobalHotKeyEvent::receiver().clone();
         // Fallback hotkey
@@ -63,7 +63,7 @@ impl HotkeyManager {
         });
 
         Self::update(cx);
-        cx.spawn(|mut cx| async move {
+        cx.spawn(async move |cx| {
             loop {
                 if let Ok(event) = receiver.try_recv() {
                     if event.state == global_hotkey::HotKeyState::Released {
@@ -100,7 +100,7 @@ impl HotkeyManager {
         })
         .detach();
     }
-    pub fn update(cx: &mut WindowContext) {
+    pub fn update(cx: &mut App) {
         cx.update_global::<HotkeyManager, _>(|manager, cx| {
             let commands = cx.global::<RootCommands>();
             let hotkeys = CommandHotkeys::all(db()).query().unwrap_or_default();
@@ -119,7 +119,7 @@ impl HotkeyManager {
             let _ = manager.manager.register_all(&manager.hotkeys);
         });
     }
-    pub fn set(id: &str, keystroke: Keystroke, cx: &mut WindowContext) -> anyhow::Result<()> {
+    pub fn set(id: &str, keystroke: Keystroke, cx: &mut App) -> anyhow::Result<()> {
         // This is annoying and will break for most hotkeys
         let mut tokens = Vec::<&str>::new();
         if keystroke.modifiers.alt {
@@ -150,7 +150,7 @@ impl HotkeyManager {
         Self::update(cx);
         Ok(())
     }
-    pub fn unset(id: &str, cx: &mut WindowContext) -> anyhow::Result<()> {
+    pub fn unset(id: &str, cx: &mut App) -> anyhow::Result<()> {
         if let Some(hk) = CommandHotkeys::get(&id.to_string(), db())? {
             hk.delete(db())?;
         }

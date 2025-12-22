@@ -21,7 +21,7 @@ The rust counterpart for the `swift-lib` functions. Used mostly for MacOS Access
 I experimented quite a bit until I landed on this structure. The central component behind all of Loungy is the query. It powers most views (lists and even forms). So actions are bound through the query keydown events. So the State Items look like this
 
 - Query: the text input that powers interactions,
-- View: the view that updates based on the interaction,
+- Entity: the view that updates based on the interaction,
 - Actions: dynamic actions based on the state of the view,
 - Toast: a view to send success/error messages on actions,
 - Loading: the loading bar when an async view is loaded,

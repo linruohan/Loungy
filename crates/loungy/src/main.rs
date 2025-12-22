@@ -15,7 +15,7 @@
 #![allow(dead_code)]
 
 use app::run_app;
-use gpui::App;
+use gpui::{App, Application};
 use ipc::{client::client_connect, server::setup_socket};
 
 mod app;
@@ -39,7 +39,7 @@ async fn main() {
     env_logger::init();
 
     if let Ok(listener) = setup_socket().await {
-        let app = App::new();
+        let app = Application::new();
         run_app(listener, app);
     } else if let Err(e) = client_connect().await {
         log::error!("CLI Error: {:?}", e);

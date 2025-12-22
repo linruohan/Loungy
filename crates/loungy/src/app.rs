@@ -17,10 +17,10 @@ use crate::{
     window::{LWindow, LWindowStyle},
     workspace::Workspace,
 };
-use gpui::{AppContext, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
+use gpui::{App, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
 use loungy_assets::Assets;
-pub fn run_app(listener: PlatformListener, app: gpui::App) {
-    app.with_assets(Assets).run(move |cx: &mut AppContext| {
+pub fn run_app(listener: PlatformListener, app: gpui::Application) {
+    app.with_assets(Assets).run(move |cx: &mut App| {
         LTheme::init(cx);
         // TODO: This still only works for a single display
         let bounds = cx.displays().first().map(|d| d.bounds()).unwrap_or(Bounds {

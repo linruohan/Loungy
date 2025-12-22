@@ -10,9 +10,9 @@
  */
 
 use gpui::{
-    ClipboardItem, EventEmitter, FocusHandle, HighlightStyle, InteractiveElement, InteractiveText,
-    IntoElement, KeyDownEvent, ParentElement, Render, RenderOnce, Styled, StyledText, TextStyle,
-    View, ViewContext, VisualContext, WeakView, WindowContext, div,
+    App, ClipboardItem, Context, Entity, EventEmitter, FocusHandle, HighlightStyle,
+    InteractiveElement, InteractiveText, IntoElement, KeyDownEvent, ParentElement, Render,
+    RenderOnce, Styled, StyledText, TextStyle, VisualContext, WeakEntity, Window, div,
 };
 use log::debug;
 use std::ops::Range;
@@ -22,11 +22,11 @@ use crate::theme::LTheme;
 #[derive(IntoElement, Clone)]
 pub struct TextInput {
     pub focus_handle: FocusHandle,
-    pub view: View<TextView>,
+    pub view: Entity<TextView>,
 }
 
 impl TextInput {
-    pub fn new(cx: &mut WindowContext) -> Self {
+    pub fn new(cx: &mut App) -> Self {
         let focus_handle = cx.focus_handle();
         let view = TextView::init(cx, &focus_handle);
         Self { focus_handle, view }
@@ -42,11 +42,11 @@ impl TextInput {
 #[derive(Clone)]
 pub struct TextInputWeak {
     pub focus_handle: FocusHandle,
-    pub view: WeakView<TextView>,
+    pub view: WeakEntity<TextView>,
 }
 
 impl TextInputWeak {
-    pub fn get_text(&self, cx: &WindowContext) -> String {
+    pub fn get_text(&self, cx: &App) -> String {
         if let Some(view) = self.view.upgrade() {
             return view.read(cx).text.clone();
         }
@@ -74,7 +74,7 @@ impl TextInputWeak {
             });
         }
     }
-    pub fn has_focus(&self, cx: &WindowContext) -> bool {
+    pub fn has_focus(&self, cx: &App) -> bool {
         if let Some(fh) = cx.focused() {
             return fh.eq(&self.focus_handle);
         }
@@ -91,7 +91,7 @@ pub struct TextView {
 }
 
 impl TextView {
-    pub fn init(cx: &mut WindowContext, focus_handle: &FocusHandle) -> View<Self> {
+    pub fn init(cx: &mut App, focus_handle: &FocusHandle) -> Entity<Self> {
         let m = Self {
             text: "".to_string(),
             selection: 0..0,
@@ -123,7 +123,7 @@ impl TextView {
         .detach();
         view
     }
-    pub fn set_text(&mut self, text: impl ToString, cx: &mut ViewContext<Self>) {
+    pub fn set_text(&mut self, text: impl ToString, cx: &mut Context<Self>) {
         self.text = text.to_string();
         self.selection = self.text.len()..self.text.len();
         cx.notify();
@@ -131,12 +131,12 @@ impl TextView {
             text: self.text.clone(),
         });
     }
-    pub fn set_masked(&mut self, masked: bool, cx: &mut ViewContext<Self>) {
+    pub fn set_masked(&mut self, masked: bool, cx: &mut Context<Self>) {
         self.masked = masked;
         cx.notify();
     }
 
-    pub fn reset(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn reset(&mut self, cx: &mut Context<Self>) {
         self.text = "".to_string();
         self.selection = 0..0;
         cx.notify();
@@ -157,7 +157,7 @@ impl TextView {
             .len();
         start..end
     }
-    pub fn select_all(&mut self, cx: &mut ViewContext<Self>) {
+    pub fn select_all(&mut self, cx: &mut Context<Self>) {
         self.selection = 0..self.text.chars().count();
         cx.notify();
     }
@@ -200,7 +200,7 @@ pub enum TextEvent {
 impl EventEmitter<TextEvent> for TextView {}
 
 impl RenderOnce for TextInput {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         cx.focus(&self.focus_handle);
         //let theme = cx.global::<Theme>();
         let clone = self.view.clone();
@@ -217,7 +217,7 @@ impl RenderOnce for TextInput {
                     #[cfg(not(target_os = "macos"))]
                     let m = ev.keystroke.modifiers.control;
 
-                    let ime_key = &ev.keystroke.ime_key;
+                    let ime_key = &ev.keystroke.key_char;
 
                     if m {
                         match keystroke.as_str() {
@@ -336,7 +336,7 @@ impl RenderOnce for TextInput {
 }
 
 impl Render for TextView {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<LTheme>();
 
         let mut text = self.text.clone();
@@ -361,7 +361,7 @@ impl Render for TextView {
             highlights = vec![];
         }
 
-        let styled_text = StyledText::new(text + " ").with_highlights(&style, highlights);
+        let styled_text = StyledText::new(text + " ").with_highlights(&highlights);
         let view = cx.view().clone();
         InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, cx| {
             view.update(cx, |editor, cx| {

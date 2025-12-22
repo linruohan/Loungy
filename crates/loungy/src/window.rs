@@ -11,8 +11,8 @@
 
 use crate::{components::shared::NoView, state::StateModel, theme::LTheme};
 use gpui::{
-    AsyncAppContext, AsyncWindowContext, BorrowAppContext, Bounds, Context, Global, Pixels, Point,
-    Size, View, VisualContext, WindowBounds, WindowContext, WindowKind, WindowOptions,
+    App, AppContext, AsyncApp, BorrowAppContext, Bounds, Entity, Global, Pixels, Point, Size,
+    Window, WindowBounds, WindowKind, WindowOptions,
 };
 use std::time::Duration;
 
@@ -63,12 +63,12 @@ impl LWindowStyle {
 }
 
 pub struct LWindow {
-    inner: View<NoView>,
+    inner: Entity<NoView>,
     hidden: bool,
 }
 
 impl LWindow {
-    pub fn init(cx: &mut WindowContext) {
+    pub fn init(cx: &mut App) {
         let view = cx.new_view(|cx| {
             cx.observe_window_activation(|_, cx| {
                 if cx.is_window_active() {
@@ -91,10 +91,10 @@ impl LWindow {
             hidden: false,
         });
     }
-    pub fn is_open(cx: &AsyncAppContext) -> bool {
+    pub fn is_open(cx: &AsyncApp) -> bool {
         cx.read_global::<Self, _>(|w, _| !w.hidden).unwrap_or(false)
     }
-    pub fn open(cx: &mut WindowContext) {
+    pub fn open(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
                 cx.activate_window();
@@ -102,7 +102,7 @@ impl LWindow {
             }
         });
     }
-    pub fn toggle(cx: &mut WindowContext) {
+    pub fn toggle(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             if this.hidden {
                 cx.activate_window();
@@ -113,17 +113,17 @@ impl LWindow {
             }
         });
     }
-    pub fn close(cx: &mut WindowContext) {
+    pub fn close(cx: &mut App) {
         cx.update_global::<Self, _>(|this, cx| {
             this.hidden = true;
             cx.hide();
         });
         // After 90 seconds, reset the state
-        cx.spawn(|mut cx| async move {
+        cx.spawn(async move |cx| {
             cx.background_executor()
                 .timer(Duration::from_secs(90))
                 .await;
-            let _ = cx.update_global::<Self, _>(|window, cx| {
+            cx.update_global::<Self, _>(|window, cx| {
                 if window.hidden {
                     StateModel::update(|this, cx| this.reset(cx), cx);
                 }
@@ -131,9 +131,9 @@ impl LWindow {
         })
         .detach();
     }
-    pub async fn wait_for_close(cx: &mut AsyncWindowContext) {
+    pub async fn wait_for_close(window: &mut Window, cx: &mut AsyncApp) {
         while let Ok(active) =
-            cx.update_window::<bool, _>(cx.window_handle(), |_, cx| cx.is_window_active())
+            cx.update_window::<bool, _>(window.window_handle(), |_, cx| cx.is_window_active())
         {
             if !active {
                 break;

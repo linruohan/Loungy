@@ -13,8 +13,8 @@ use crate::loader::ActiveLoaders;
 use crate::state::{StateItem, StateModel};
 use crate::theme::LTheme;
 use gpui::{
-    InteractiveElement, IntoElement, MouseButton, ParentElement, Render, Styled, View, ViewContext,
-    VisualContext, WindowContext, div,
+    App, Context, Entity, InteractiveElement, IntoElement, MouseButton, ParentElement, Render,
+    Styled, Window, div,
 };
 
 pub struct Workspace {
@@ -22,7 +22,7 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn build(cx: &mut WindowContext) -> View<Self> {
+    pub fn build(cx: &mut App) -> Entity<Self> {
         cx.new_view(|cx| {
             let state = StateModel::init(cx);
             Workspace { state }
@@ -31,7 +31,7 @@ impl Workspace {
 }
 
 impl Render for Workspace {
-    fn render(&mut self, cx: &mut ViewContext<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.global::<LTheme>();
         let stack: &Vec<StateItem> = self.state.inner.read(cx).stack.as_ref();
         let item = stack.last().unwrap();
@@ -41,7 +41,7 @@ impl Render for Workspace {
         if stack.len() > 1 {
             back = div()
                 .ml_2()
-                .on_mouse_down(MouseButton::Left, move |_, cx| {
+                .on_mouse_down(MouseButton::Left, move |_, _, cx| {
                     StateModel::update(|this, cx| this.pop(cx), cx);
                 })
                 .child(Img::default().icon(Icon::ArrowLeft));
@@ -73,7 +73,7 @@ impl Render for Workspace {
                     .w_full(),
             )
             .child(ActiveLoaders {})
-            .child(div().flex_1().size_full().p_2().child(view.view.clone()))
+            .child(div().flex_1().size_full().p_2().child(view.view.into()))
             .child(
                 div()
                     .mt_auto()

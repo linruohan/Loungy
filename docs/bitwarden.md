@@ -28,7 +28,7 @@ When you first open the Bitwarden command it will ask you to add an account:
 
 - **Instance URL**: If you use the official Bitwarden website, leave this as is. If you are using a custom server, enter that here
 - **Identifier**: This is an ID you can use to differentiate accounts if you have multiple. Can be anything
-- **Client ID** & **Client Secret**: Because I don't want to deal with all kinds of authentication methods, we just use API keys for authentication. To get those go to the web vault and go to `Account Settings` -> `Security` -> `View API Key`
+- **Client ID** & **Client Secret**: Because I don't want to deal with all kinds of authentication methods, we just use API keys for authentication. To get those go to the web vault and go to `Account Settings` -> `Security` -> `Entity API Key`
 
 Once you submit this form, it will prompt you for your master password to unlock the vault. You can decide whether you want Loungy to remember your password, so it can unlock your vault whenever the session expires. Otherwise you will be prompted as soon as that happens.
 

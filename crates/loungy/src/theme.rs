@@ -8,9 +8,7 @@
  *  See https://github.com/MatthiasGrandl/Loungy/blob/main/LICENSE.md for license information
  *
  */
-use gpui::{
-    AppContext, Global, Hsla, Rgba, SharedString, WindowAppearance, WindowBackgroundAppearance,
-};
+use gpui::{App, Global, Hsla, Rgba, SharedString, WindowAppearance, WindowBackgroundAppearance};
 use log::error;
 use serde::{Deserialize, Serialize};
 
@@ -105,7 +103,7 @@ pub struct LTheme {
     pub crust: Hsla,
 }
 
-fn load_fonts(cx: &mut AppContext) -> gpui::Result<()> {
+fn load_fonts(cx: &mut App) -> gpui::Result<()> {
     let font_paths = cx.asset_source().list("fonts")?;
     let mut embedded_fonts = Vec::new();
     for font_path in font_paths {
@@ -171,7 +169,7 @@ impl Default for ThemeSettings {
 }
 
 impl LTheme {
-    pub fn init(cx: &mut AppContext) {
+    pub fn init(cx: &mut App) {
         load_fonts(cx).expect("Failed to load fonts");
         let appearance = cx.window_appearance();
         let theme = LTheme::mode(appearance);

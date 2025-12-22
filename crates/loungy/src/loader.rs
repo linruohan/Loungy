@@ -1,6 +1,6 @@
 use crate::{state::LazyMutex, theme};
 use gpui::{
-    Animation, AnimationExt, IntoElement, ParentElement, RenderOnce, Styled, WindowContext, div,
+    Animation, AnimationExt, App, IntoElement, ParentElement, RenderOnce, Styled, Window, div,
     linear, relative,
 };
 use std::{
@@ -59,7 +59,7 @@ impl LoaderState {
 #[derive(IntoElement)]
 pub struct ActiveLoaders {}
 impl RenderOnce for ActiveLoaders {
-    fn render(self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.global::<theme::LTheme>().clone();
 
         div().w_full().h_px().bg(theme.mantle).relative().child(
