@@ -33,7 +33,7 @@ impl StateViewBuilder for ThemeListBuilder {
         ListBuilder::new()
             .interval(Duration::from_secs(10))
             .build(
-                |_, _, _cx| {
+                |_, _, cx| {
                     let themes = LTheme::list();
                     Ok(Some(
                         themes
@@ -139,7 +139,7 @@ pub struct ThemeCommandBuilder;
 command!(ThemeCommandBuilder);
 
 impl RootCommandBuilder for ThemeCommandBuilder {
-    fn build(&self, _cx: &mut Window) -> RootCommand {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
         RootCommand::new(
             "themes",
             "Search Themes",
@@ -148,7 +148,7 @@ impl RootCommandBuilder for ThemeCommandBuilder {
             vec!["Appearance"],
             None,
             |_, cx| {
-                StateModel::update(|this, cx| this.push(ThemeListBuilder, cx), cx);
+                StateModel::update(|this, cx| this.push(ThemeListBuilder, window, cx), cx);
             },
         )
     }

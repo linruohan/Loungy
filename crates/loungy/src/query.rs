@@ -26,9 +26,9 @@ pub struct TextInput {
 }
 
 impl TextInput {
-    pub fn new(cx: &mut App) -> Self {
+    pub fn new(window: &mut Window, cx: &mut App) -> Self {
         let focus_handle = cx.focus_handle();
-        let view = TextView::init(cx, &focus_handle);
+        let view = TextView::init(window, cx, &focus_handle);
         Self { focus_handle, view }
     }
     pub fn downgrade(&self) -> TextInputWeak {
@@ -69,7 +69,7 @@ impl TextInputWeak {
     }
     pub fn set_masked<C: AppContext>(&self, masked: bool, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.set_masked(masked, cx);
             });
         }
@@ -91,7 +91,7 @@ pub struct TextView {
 }
 
 impl TextView {
-    pub fn init(cx: &mut App, focus_handle: &FocusHandle) -> Entity<Self> {
+    pub fn init(window: &mut Window, cx: &mut App, focus_handle: &FocusHandle) -> Entity<Self> {
         let m = Self {
             text: "".to_string(),
             selection: 0..0,
@@ -99,15 +99,15 @@ impl TextView {
             placeholder: "Type here...".to_string(),
             masked: false,
         };
-        let view = cx.new_view(|cx| {
+        let view = cx.new(|cx| {
             #[cfg(debug_assertions)]
             cx.on_release(|_, _, _| debug!("Text Input released"))
                 .detach();
-            cx.on_blur(focus_handle, |_: &mut TextView, cx| {
+            cx.on_blur(focus_handle, window, |_: &mut TextView, window, cx| {
                 cx.emit(TextEvent::Blur);
             })
             .detach();
-            cx.on_focus(focus_handle, |view, cx| {
+            cx.on_focus(focus_handle, window, |view, window, cx| {
                 view.select_all(cx);
             })
             .detach();

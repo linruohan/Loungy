@@ -44,7 +44,12 @@ swift!( pub fn menu_item_select(data: SRData));
 pub struct MenuListBuilder;
 command!(MenuListBuilder);
 impl StateViewBuilder for MenuListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(
+        &self,
+        context: &mut StateViewContext,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> AnyEntity {
         context
             .query
             .set_placeholder("Search for menu items...", cx);
@@ -119,7 +124,7 @@ pub struct MenuCommandBuilder;
 command!(MenuCommandBuilder);
 
 impl RootCommandBuilder for MenuCommandBuilder {
-    fn build(&self, _cx: &mut Window) -> RootCommand {
+    fn build(&self, window: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "macos_menu",
             "Search Menu Items",
@@ -128,7 +133,7 @@ impl RootCommandBuilder for MenuCommandBuilder {
             vec!["MacOS", "Apple"],
             None,
             |_, cx| {
-                StateModel::update(|this, cx| this.push(MenuListBuilder, cx), cx);
+                StateModel::update(|this, cx| this.push(MenuListBuilder, window, cx), cx);
             },
         )
     }

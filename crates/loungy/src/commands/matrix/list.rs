@@ -44,7 +44,12 @@ struct RoomList {
 
 command!(RoomList);
 impl StateViewBuilder for RoomList {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(
+        &self,
+        context: &mut StateViewContext,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> AnyEntity {
         context.query.set_placeholder("Search your rooms...", cx);
         if let Ok(accounts) = Session::all(db()).query() {
             if accounts.len() > 1 {
@@ -211,7 +216,7 @@ async fn sync(session: Session, view: WeakEntity<AsyncListItems>, mut cx: AsyncA
                 ),
             ])
             .preview(0.66, move |cx| StateItem::init(preview.clone(), false, cx))
-            .meta(cx.new_model(|_| timestamp).unwrap().into_any())
+            .meta(cx.new(|_| timestamp).unwrap().into_any())
             .build();
 
             items.push(item);
@@ -230,8 +235,8 @@ async fn sync(session: Session, view: WeakEntity<AsyncListItems>, mut cx: AsyncA
 }
 command!(MatrixCommandBuilder);
 impl RootCommandBuilder for MatrixCommandBuilder {
-    fn build(&self, cx: &mut App) -> RootCommand {
-        let view = cx.new_view(|cx| {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
+        let view = cx.new(|cx| {
             let db = db();
             let sessions = Session::all(db).query().unwrap_or_default();
             for session in sessions {
@@ -252,9 +257,12 @@ impl RootCommandBuilder for MatrixCommandBuilder {
                 let view = view.clone();
                 let sessions = Session::all(db());
                 if sessions.count().unwrap_or_default() == 0 {
-                    StateModel::update(|this, cx| this.push(AccountCreationBuilder, cx), cx);
+                    StateModel::update(
+                        |this, cx| this.push(AccountCreationBuilder, window, cx),
+                        cx,
+                    );
                 } else {
-                    StateModel::update(|this, cx| this.push(RoomList { view }, cx), cx);
+                    StateModel::update(|this, cx| this.push(RoomList { view }, window, cx), cx);
                 };
             },
         )

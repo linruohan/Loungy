@@ -57,7 +57,7 @@ impl Numbat {
         numbat::Context::prefetch_exchange_rates();
         let _ = ctx.interpret("use prelude", numbat::resolver::CodeSource::Text);
 
-        cx.new_view(move |cx| {
+        cx.new(move |cx| {
             if let Some(query) = query.view.upgrade() {
                 cx.subscribe(&query, move |subscriber: &mut Numbat, _, event, cx| {
                     if let TextEvent::Input { text } = event {

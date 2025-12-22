@@ -186,7 +186,7 @@ pub struct TailscaleCommandBuilder;
 command!(TailscaleCommandBuilder);
 
 impl RootCommandBuilder for TailscaleCommandBuilder {
-    fn build(&self, _cx: &mut Window) -> RootCommand {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
         RootCommand::new(
             "tailscale",
             "Search Peers",
@@ -195,7 +195,7 @@ impl RootCommandBuilder for TailscaleCommandBuilder {
             vec!["VPN"],
             None,
             |_, cx| {
-                StateModel::update(|this, cx| this.push(TailscaleListBuilder, cx), cx);
+                StateModel::update(|this, cx| this.push(TailscaleListBuilder, window, cx), cx);
             },
         )
     }

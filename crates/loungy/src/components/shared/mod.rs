@@ -22,9 +22,9 @@ use async_std::task::{JoinHandle, spawn, spawn_blocking};
 use futures::FutureExt;
 use futures::future::Shared;
 use gpui::{
-    Animation, AnimationExt, App, Context, Entity, Hsla, ImageSource, IntoElement, ParentElement,
-    Render, RenderOnce, Resource, SharedUri, Styled, StyledImage, Transformation, VisualContext,
-    Window, div, img, percentage, svg,
+    Animation, AnimationExt, App, AppContext, Context, Entity, Hsla, ImageSource, IntoElement,
+    ParentElement, Render, RenderOnce, Resource, SharedUri, Styled, StyledImage, Transformation,
+    VisualContext, Window, div, img, percentage, svg,
 };
 use log::debug;
 use parking_lot::Mutex;
@@ -332,7 +332,7 @@ impl Favicon {
         }
         .to_string();
 
-        cx.new_view(|_cx| Self {
+        cx.new(|_cx| Self {
             img: img.clone(),
             fallback,
             url,

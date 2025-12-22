@@ -13,8 +13,8 @@ use crate::loader::ActiveLoaders;
 use crate::state::{StateItem, StateModel};
 use crate::theme::LTheme;
 use gpui::{
-    App, Context, Entity, InteractiveElement, IntoElement, MouseButton, ParentElement, Render,
-    Styled, Window, div,
+    App, AppContext, Context, Entity, InteractiveElement, IntoElement, MouseButton, ParentElement,
+    Render, Styled, Window, div,
 };
 
 pub struct Workspace {
@@ -22,9 +22,9 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn build(cx: &mut App) -> Entity<Self> {
-        cx.new_view(|cx| {
-            let state = StateModel::init(cx);
+    pub fn build(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| {
+            let state = StateModel::init(window, cx);
             Workspace { state }
         })
     }

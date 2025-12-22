@@ -82,7 +82,7 @@ impl RootCommand {
 }
 
 pub trait RootCommandBuilder: CommandTrait {
-    fn build(&self, cx: &mut App) -> RootCommand;
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand;
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -91,7 +91,7 @@ pub struct RootCommands {
 }
 
 impl RootCommands {
-    pub fn init(cx: &mut App) {
+    pub fn init(window: &mut Window, cx: &mut App) {
         let commands: Vec<Box<dyn RootCommandBuilder>> = vec![
             Box::new(list::LoungyCommandBuilder),
             #[cfg(target_os = "macos")]
@@ -110,13 +110,13 @@ impl RootCommands {
         let mut map = HashMap::new();
         for command in commands {
             let id = command.command();
-            let mut command = command.build(cx);
+            let mut command = command.build(window, cx);
             command.id = id.clone();
             map.insert(id, command);
         }
         cx.set_global(Self { commands: map });
     }
-    pub fn list(cx: &mut App) -> Vec<Item> {
+    pub fn list(window: &mut Window, cx: &mut App) -> Vec<Item> {
         let commands = cx.global::<Self>().commands.clone();
         let items: Vec<Item> = commands
             .values()
@@ -154,7 +154,7 @@ impl RootCommands {
                             move |_, cx| {
                                 let id = id.clone();
                                 StateModel::update(
-                                    |this, cx| this.push(HotkeyBuilder { id }, cx),
+                                    |this, cx| this.push(HotkeyBuilder { id }, window, cx),
                                     cx,
                                 );
                             }

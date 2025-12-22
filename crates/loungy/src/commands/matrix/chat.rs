@@ -414,7 +414,7 @@ async fn sync(
                 first: false,
                 last: false,
                 in_reply_to: None,
-                meta: cx.new_model(|_| m.clone()).unwrap().into_any(),
+                meta: cx.new(|_| m.clone()).unwrap().into_any(),
             };
             if !prev.as_ref().is_some_and(|s| s.eq(&m.sender())) {
                 message.first = true;
@@ -463,7 +463,7 @@ impl StateViewBuilder for ChatRoom {
     fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
         context.query.set_placeholder("Search this chat...", cx);
 
-        let view = cx.new_view(|cx| {
+        let view = cx.new(|cx| {
             {
                 cx.spawn({
                     let timeline = self.timeline.clone();

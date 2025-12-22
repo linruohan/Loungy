@@ -569,8 +569,8 @@ impl List {
         cx: &mut App,
     ) -> Entity<Self> {
         let (selection_sender, r) = channel::<u64>();
-        let selected = cx.new_model(|_| 0);
-        let items: Entity<Vec<Item>> = cx.new_model(|_| vec![]);
+        let selected = cx.new(|_| 0);
+        let items: Entity<Vec<Item>> = cx.new(|_| vec![]);
         let mut list = Self {
             state: ListState::new(
                 0,

@@ -31,12 +31,17 @@ use std::{collections::HashMap, time::Duration};
 pub struct RootListBuilder;
 command!(RootListBuilder);
 impl StateViewBuilder for RootListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(
+        &self,
+        context: &mut StateViewContext,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> AnyEntity {
         context
             .query
             .set_placeholder("Search for apps and commands...", cx);
         let numbat = Numbat::init(&context.query, cx);
-        let commands = RootCommands::list(cx);
+        let commands = RootCommands::list(window, cx);
 
         let list = ListBuilder::new()
             .filter(move |this, cx| {
@@ -240,7 +245,7 @@ impl StateViewBuilder for RootListBuilder {
 pub struct LoungyCommandBuilder;
 command!(LoungyCommandBuilder);
 impl RootCommandBuilder for LoungyCommandBuilder {
-    fn build(&self, _cx: &mut Window) -> RootCommand {
+    fn build(&self, _: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "loungy",
             "Loungy",

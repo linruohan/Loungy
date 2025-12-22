@@ -16,8 +16,9 @@ use crate::{
     theme::LTheme,
 };
 use gpui::{
-    App, Context, Entity, FontWeight, InteractiveElement, IntoElement, Keystroke, ListAlignment,
-    ListState, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled, Window, div, list,
+    App, AppContext, Context, Entity, FontWeight, InteractiveElement, IntoElement, Keystroke,
+    ListAlignment, ListState, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled,
+    Window, div, list,
 };
 use std::{any::Any, collections::HashMap};
 
@@ -301,7 +302,7 @@ impl InputView {
         focus_model: Entity<usize>,
         cx: &mut App,
     ) -> Entity<Self> {
-        cx.new_view(|cx| {
+        cx.new(|cx| {
             cx.observe(&focus_model, move |input: &mut InputView, focused, cx| {
                 let old = input.focused;
                 let new = index.eq(focused.read(cx));
@@ -390,7 +391,7 @@ impl Form {
         context: &mut StateViewContext,
         cx: &mut App,
     ) -> Entity<Self> {
-        let focus_model: Entity<usize> = cx.new_model(|_| 0);
+        let focus_model: Entity<usize> = cx.new(|_| 0);
         let inputs: Vec<Entity<InputView>> = inputs
             .into_iter()
             .enumerate()
@@ -438,7 +439,7 @@ impl Form {
             );
         }
 
-        cx.new_view(|_| Self {
+        cx.new(|_| Self {
             list: ListState::new(inputs.len(), ListAlignment::Top, Pixels(100.0)),
             inputs,
         })

@@ -235,7 +235,7 @@ pub struct Toast {
 
 impl Toast {
     pub fn init(cx: &mut App) -> Self {
-        let state = cx.new_view(|_| ToastState::Idle);
+        let state = cx.new(|_| ToastState::Idle);
         Self { state }
     }
     pub fn loading<C: AppContext>(&mut self, message: impl ToString, cx: &mut C) {
@@ -303,7 +303,7 @@ impl Toast {
                     });
                 })
                 .detach();
-                cx.new_view(|_| PopupToast {
+                cx.new(|_| PopupToast {
                     message: message.to_string().into(),
                     icon,
                 })
@@ -361,10 +361,15 @@ pub struct StateViewContext {
 }
 
 impl StateItem {
-    pub fn init(view: impl StateViewBuilder, workspace: bool, cx: &mut App) -> Self {
+    pub fn init(
+        view: impl StateViewBuilder,
+        workspace: bool,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> Self {
         let (s, r) = crossbeam_channel::unbounded::<bool>();
-        let (actions_weak, actions) = LActionsModel::init(s, cx);
-        let query = TextInput::new(cx);
+        let (actions_weak, actions) = LActionsModel::init(s, window, cx);
+        let query = TextInput::new(window, cx);
 
         let actions_clone = actions_weak.clone();
         cx.subscribe(&query.view, move |_, event, cx| match event {
@@ -410,7 +415,7 @@ impl StateItem {
             update_receiver: r,
         };
         let id = view.command();
-        let view = view.build(&mut context, cx);
+        let view = view.build(&mut context, window, cx);
         Self {
             id: id.into(),
             query,
@@ -422,7 +427,8 @@ impl StateItem {
 }
 
 pub trait StateViewBuilder: CommandTrait + Clone {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity;
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App)
+    -> AnyEntity;
 }
 
 pub trait CommandTrait {
@@ -450,11 +456,11 @@ pub struct StateModel {
 }
 
 impl StateModel {
-    pub fn init(cx: &mut App) -> Self {
+    pub fn init(window: &mut Window, cx: &mut App) -> Self {
         let this = Self {
-            inner: cx.new_model(|_| State { stack: vec![] }),
+            inner: cx.new(|_| State { stack: vec![] }),
         };
-        this.push(RootListBuilder {}, cx);
+        this.push(RootListBuilder {}, window, cx);
 
         cx.set_global(this.clone());
 
@@ -482,8 +488,8 @@ impl StateModel {
             };
         });
     }
-    pub fn push(&self, view: impl StateViewBuilder, cx: &mut App) {
-        let item = StateItem::init(view, true, cx);
+    pub fn push(&self, view: impl StateViewBuilder, window: &mut Window, cx: &mut App) {
+        let item = StateItem::init(view, true, window, cx);
         self.inner.update(cx, |model, cx| {
             model.stack.push(item);
             cx.notify();
@@ -496,9 +502,9 @@ impl StateModel {
             cx.notify();
         });
     }
-    pub fn replace(&self, view: impl StateViewBuilder, cx: &mut App) {
+    pub fn replace(&self, view: impl StateViewBuilder, window: &mut Window, cx: &mut App) {
         self.pop(cx);
-        self.push(view, cx);
+        self.push(view, window, cx);
     }
     pub fn reset(&self, cx: &mut App) {
         self.inner
@@ -797,15 +803,15 @@ pub struct LActions {
 impl LActions {
     fn new(update_sender: crossbeam_channel::Sender<bool>, cx: &mut App) -> Self {
         Self {
-            global: cx.new_model(|_| Vec::new()),
-            local: cx.new_model(|_| Vec::new()),
+            global: cx.new(|_| Vec::new()),
+            local: cx.new(|_| Vec::new()),
             active: None,
             meta: None,
             show: false,
             query: None,
             list: None,
             toast: Toast::init(cx),
-            dropdown: cx.new_view(|_| Dropdown {
+            dropdown: cx.new(|_| Dropdown {
                 value: "".to_string(),
                 items: vec![],
             }),
@@ -979,6 +985,7 @@ pub struct LActionsModel {
 impl LActionsModel {
     pub fn init(
         update_sender: crossbeam_channel::Sender<bool>,
+        window: &mut Window,
         cx: &mut App,
     ) -> (Self, Entity<LActions>) {
         let inner = cx.new(|cx| {
@@ -993,7 +1000,7 @@ impl LActionsModel {
         };
         inner.update(cx, |this, cx| {
             let (_s, r) = crossbeam_channel::unbounded::<bool>();
-            let query = TextInput::new(cx);
+            let query = TextInput::new(window, cx);
             let mut context = StateViewContext {
                 query: query.downgrade(),
                 actions: model.clone(),

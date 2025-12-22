@@ -98,6 +98,6 @@ impl StateViewBuilder for Compose {
             cx,
         );
 
-        cx.new_view(|_| NoView).into()
+        cx.new(|_| NoView).into()
     }
 }

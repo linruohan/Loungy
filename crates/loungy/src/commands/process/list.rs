@@ -74,7 +74,12 @@ pub struct ProcessListBuilder;
 command!(ProcessListBuilder);
 
 impl StateViewBuilder for ProcessListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(
+        &self,
+        context: &mut StateViewContext,
+        window: &mut Window,
+        cx: &mut App,
+    ) -> AnyEntity {
         context
             .query
             .set_placeholder("Search for running processes...", cx);
@@ -221,7 +226,7 @@ pub struct ProcessCommandBuilder;
 command!(ProcessCommandBuilder);
 
 impl RootCommandBuilder for ProcessCommandBuilder {
-    fn build(&self, _cx: &mut Window) -> RootCommand {
+    fn build(&self, window: &mut Window, _cx: &mut App) -> RootCommand {
         RootCommand::new(
             "task_manager",
             "Search Processes",
@@ -230,7 +235,7 @@ impl RootCommandBuilder for ProcessCommandBuilder {
             vec!["Kill", "Memory", "CPU"],
             None,
             |_, cx| {
-                StateModel::update(|this, cx| this.push(ProcessListBuilder, cx), cx);
+                StateModel::update(|this, cx| this.push(ProcessListBuilder, window, cx), cx);
             },
         )
     }

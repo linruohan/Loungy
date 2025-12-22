@@ -338,7 +338,7 @@ impl ClipboardListItem {
             }
             actions
         })
-        .meta(cx.new_model(|_| self.copied_last).into_any())
+        .meta(cx.new(|_| self.copied_last).into_any())
         .build()
     }
     fn delete(&self, view: WeakEntity<AsyncListItems>, cx: &mut App) -> anyhow::Result<()> {
@@ -392,7 +392,7 @@ impl ClipboardPreview {
             .unwrap()
             .contents;
 
-        let bounds = cx.new_model(|_| Bounds::default());
+        let bounds = cx.new(|_| Bounds::default());
 
         Self {
             id,
@@ -586,7 +586,7 @@ command!(ClipboardPreview);
 
 impl StateViewBuilder for ClipboardPreview {
     fn build(&self, _context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
-        cx.new_view(|_| self.clone()).into()
+        cx.new(|_| self.clone()).into()
     }
 }
 
@@ -603,8 +603,8 @@ pub(super) fn db_detail() -> &'static Database {
 pub struct ClipboardCommandBuilder;
 command!(ClipboardCommandBuilder);
 impl RootCommandBuilder for ClipboardCommandBuilder {
-    fn build(&self, cx: &mut App) -> RootCommand {
-        let view = cx.new_view(|cx| {
+    fn build(&self, window: &mut Window, cx: &mut App) -> RootCommand {
+        let view = cx.new(|cx| {
             let mut list_items = AsyncListItems::new();
             let items = ClipboardListItem::all(db_items())
                 .query()
@@ -799,7 +799,10 @@ impl RootCommandBuilder for ClipboardCommandBuilder {
             None,
             move |_, cx| {
                 let view = view.clone();
-                StateModel::update(|this, cx| this.push(ClipboardListBuilder { view }, cx), cx);
+                StateModel::update(
+                    |this, cx| this.push(ClipboardListBuilder { view }, window, cx),
+                    cx,
+                );
             },
         )
     }

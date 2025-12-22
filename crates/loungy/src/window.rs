@@ -68,16 +68,16 @@ pub struct LWindow {
 }
 
 impl LWindow {
-    pub fn init(cx: &mut App) {
-        let view = cx.new_view(|cx| {
-            cx.observe_window_activation(|_, cx| {
+    pub fn init(window: &mut Window, cx: &mut App) {
+        let view = cx.new(|cx| {
+            cx.observe_window_activation(window, |_, _, cx| {
                 if cx.is_window_active() {
                     return;
                 };
                 LWindow::close(cx);
             })
             .detach();
-            cx.observe_window_appearance(|_, cx| {
+            cx.observe_window_appearance(window, |_, _, cx| {
                 cx.update_global::<LTheme, _>(|theme: &mut LTheme, cx| {
                     *theme = LTheme::mode(cx.window_appearance());
                     cx.refresh();

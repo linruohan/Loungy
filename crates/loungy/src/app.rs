@@ -30,7 +30,7 @@ pub fn run_app(listener: PlatformListener, app: gpui::Application) {
                 height: Pixels::from(1080.0),
             },
         });
-        let _ = cx.open_window(LWindowStyle::Main.options(bounds), |cx| {
+        let _ = cx.open_window(LWindowStyle::Main.options(bounds), |window, cx| {
             let theme = cx.global::<LTheme>();
             cx.set_background_appearance(WindowBackgroundAppearance::from(
                 theme.window_background.clone().unwrap_or_default(),
@@ -38,8 +38,8 @@ pub fn run_app(listener: PlatformListener, app: gpui::Application) {
             RootCommands::init(cx);
             cx.spawn(|cx| start_server(listener, cx)).detach();
             HotkeyManager::init(cx);
-            let view = Workspace::build(cx);
-            LWindow::init(cx);
+            let view = Workspace::build(window, cx);
+            LWindow::init(window, cx);
 
             view
         });
