@@ -6,7 +6,7 @@ use std::{
 
 use anyhow::{Error, anyhow};
 use clap::{Arg, ValueEnum, command};
-use gpui::{AsyncWindowContext, private::serde_json};
+use gpui::{AsyncApp, private::serde_json};
 use serde::{Deserialize, Serialize};
 use smol::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
@@ -155,10 +155,7 @@ pub async fn setup_socket() -> anyhow::Result<PlatformListener> {
         Ok(PlatformListener::Tcp(listener))
     }
 }
-pub async fn start_server(
-    listener: PlatformListener,
-    mut cx: AsyncWindowContext,
-) -> anyhow::Result<()> {
+pub async fn start_server(listener: PlatformListener, mut cx: AsyncApp) -> anyhow::Result<()> {
     let commands = cx.read_global::<RootCommands, _>(|commands, _| commands.clone())?;
     loop {
         let (stream, _) = listener.accept().await?;
@@ -177,7 +174,7 @@ pub async fn start_server(
 async fn handle_client(
     mut stream: PlatformStream,
     commands: RootCommands,
-    mut cx: AsyncWindowContext,
+    mut cx: AsyncApp,
 ) -> anyhow::Result<()> {
     // Send available commands to the client
     let bytes = serde_json::to_vec(&commands)?;

@@ -10,7 +10,7 @@
  */
 
 use gpui::{
-    App, ClipboardItem, Context, Entity, EventEmitter, FocusHandle, HighlightStyle,
+    App, AppContext, ClipboardItem, Context, Entity, EventEmitter, FocusHandle, HighlightStyle,
     InteractiveElement, InteractiveText, IntoElement, KeyDownEvent, ParentElement, Render,
     RenderOnce, Styled, StyledText, TextStyle, VisualContext, WeakEntity, Window, div,
 };
@@ -52,7 +52,7 @@ impl TextInputWeak {
         }
         "".to_string()
     }
-    pub fn set_placeholder<C: VisualContext>(&self, placeholder: impl ToString, cx: &mut C) {
+    pub fn set_placeholder<C: AppContext>(&self, placeholder: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
             cx.update_view(&view, |editor: &mut TextView, cx| {
                 editor.placeholder = placeholder.to_string();
@@ -60,14 +60,14 @@ impl TextInputWeak {
             });
         }
     }
-    pub fn set_text<C: VisualContext>(&self, text: impl ToString, cx: &mut C) {
+    pub fn set_text<C: AppContext>(&self, text: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
             cx.update_view(&view, |editor: &mut TextView, cx| {
                 editor.set_text(text, cx);
             });
         }
     }
-    pub fn set_masked<C: VisualContext>(&self, masked: bool, cx: &mut C) {
+    pub fn set_masked<C: AppContext>(&self, masked: bool, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
             cx.update_view(&view, |editor: &mut TextView, cx| {
                 editor.set_masked(masked, cx);

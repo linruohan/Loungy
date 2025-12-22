@@ -13,7 +13,7 @@ use crate::components::shared::Img;
 use crate::paths::paths;
 use crate::window::LWindow;
 use cocoa::appkit::NSPasteboard;
-use gpui::{AsyncWindowContext, WindowContext};
+use gpui::{App, AsyncApp, Window};
 use std::time::Duration;
 use std::{
     fs,
@@ -153,7 +153,7 @@ swift!( fn copy_file(path: SRString));
 
 swift!( fn paste_file(path: SRString));
 
-pub fn close_and_paste(value: &str, formatting: bool, cx: &mut WindowContext) {
+pub fn close_and_paste(value: &str, formatting: bool, cx: &mut App) {
     LWindow::close(cx);
     let value = value.to_string();
     cx.spawn(move |mut cx| async move {
@@ -166,7 +166,7 @@ pub fn close_and_paste(value: &str, formatting: bool, cx: &mut WindowContext) {
     .detach();
 }
 
-pub fn close_and_paste_file(path: &Path, cx: &mut WindowContext) {
+pub fn close_and_paste_file(path: &Path, cx: &mut App) {
     LWindow::close(cx);
     let path = path.to_string_lossy().to_string();
     cx.spawn(move |mut cx| async move {
@@ -197,10 +197,7 @@ pub fn ocr(path: &Path) {
     unsafe { ocr(SRString::from(path.to_string_lossy().to_string().as_str())) }
 }
 
-pub async fn clipboard(
-    mut on_change: impl FnMut(&mut AsyncWindowContext),
-    mut cx: AsyncWindowContext,
-) {
+pub async fn clipboard(mut on_change: impl FnMut(&mut AsyncApp), mut cx: AsyncApp) {
     unsafe {
         let pasteboard = NSPasteboard::generalPasteboard(cocoa::base::nil);
         let mut change_count = pasteboard.changeCount();
