@@ -20,10 +20,10 @@ use crate::{
     window::{LWindow, LWindowStyle},
 };
 use gpui::{
-    Animation, AnimationExt, AnyElement, AnyEntity, App, AppContext, AsyncApp, BorrowAppContext,
-    Bounds, Context, Div, Entity, FontWeight, Global, Hsla, IntoElement, Keystroke, Modifiers,
-    ParentElement, Pixels, Point, Render, RenderOnce, SharedString, Size, Styled, VisualContext,
-    WeakEntity, Window, bounce, div, ease_in_out, relative, svg,
+    Animation, AnimationExt, AnyElement, AnyEntity, AnyView, App, AppContext, AsyncApp,
+    BorrowAppContext, Bounds, Context, Div, Entity, FontWeight, Global, Hsla, IntoElement,
+    Keystroke, Modifiers, ParentElement, Pixels, Point, Render, RenderOnce, SharedString, Size,
+    Styled, VisualContext, WeakEntity, Window, bounce, div, ease_in_out, px, relative, svg,
 };
 use log::debug;
 use parking_lot::{Mutex, MutexGuard};
@@ -74,7 +74,7 @@ pub enum ToastState {
 
 impl ToastState {
     fn dot(color: Hsla) -> AnyElement {
-        let size = Pixels(6.0);
+        let size = px(6.0);
         div()
             .size_6()
             .flex()
@@ -97,9 +97,8 @@ impl ToastState {
                                 let delta = (delta - 0.75) * 4.0;
                                 let mut color = color;
                                 color.a = 1.0 - delta;
-                                let size = Pixels(
-                                    size.to_f64() as f32 * delta * 2.0 + size.to_f64() as f32,
-                                );
+                                let size =
+                                    px(size.to_f64() as f32 * delta * 2.0 + size.to_f64() as f32);
                                 div.bg(color).size(size)
                             }
                         },
@@ -117,7 +116,7 @@ impl ToastState {
             .into_any_element()
     }
     pub fn timeout(&mut self, duration: Duration, cx: &mut Context<Self>) {
-        cx.spawn(move |view, mut cx| async move {
+        cx.spawn(async move |view, cx| {
             cx.background_executor().timer(duration).await;
             // cx.background_executor().timer(duration).await;
             let _ = view.update(&mut cx, |this, cx| {
@@ -298,7 +297,7 @@ impl Toast {
                 cx.spawn(async move |cx| {
                     cx.background_executor().timer(Duration::from_secs(2)).await;
                     //cx.background_executor().timer(Duration::from_secs(2)).await;
-                    let _ = cx.update_window(cx.window_handle(), |_, cx| {
+                    let _ = cx.update_window(window.window_handle(), |_, _, cx| {
                         cx.remove_window();
                     });
                 })
@@ -349,7 +348,7 @@ impl Render for PopupToast {
 pub struct StateItem {
     pub id: SharedString,
     pub query: TextInput,
-    pub view: AnyEntity,
+    pub view: AnyView,
     pub actions: Entity<LActions>,
     pub workspace: bool,
 }
@@ -427,8 +426,7 @@ impl StateItem {
 }
 
 pub trait StateViewBuilder: CommandTrait + Clone {
-    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App)
-    -> AnyEntity;
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView;
 }
 
 pub trait CommandTrait {
@@ -858,7 +856,7 @@ impl LActions {
         let list = self.list.clone().unwrap();
         let el_height = 42.0;
         let count = list.read(cx).items.read(cx).len();
-        let height = Pixels(if count == 0 {
+        let height = px(if count == 0 {
             0.0
         } else if count > 4 {
             4.0 * el_height + 20.0
@@ -945,8 +943,12 @@ impl LActions {
         });
         self.update()
     }
-    pub fn has_focus(&self, cx: &App) -> bool {
-        self.query.as_ref().unwrap().downgrade().has_focus(cx)
+    pub fn has_focus(&self, window: &mut Window, cx: &mut App) -> bool {
+        self.query
+            .as_ref()
+            .unwrap()
+            .downgrade()
+            .has_focus(window, cx)
     }
     pub fn get_meta_model<V: Clone + 'static>(&self) -> Option<Entity<V>> {
         self.meta.clone().and_then(|m| m.downcast::<V>().ok())
@@ -968,7 +970,7 @@ impl Render for LActions {
                 .items_center()
                 .font_weight(FontWeight::SEMIBOLD)
                 .child(div().child(action.clone()).text_color(theme.text))
-                .child(div().h_2_3().w(Pixels(2.0)).bg(theme.surface0).mx_2())
+                .child(div().h_2_3().w(px(2.0)).bg(theme.surface0).mx_2())
                 .child(open)
                 .child(self.popup(cx))
         } else {
@@ -990,7 +992,7 @@ impl LActionsModel {
     ) -> (Self, Entity<LActions>) {
         let inner = cx.new(|cx| {
             #[cfg(debug_assertions)]
-            cx.on_release(|_, _, _| debug!("ActionsModel released"))
+            cx.on_release(|_, _| debug!("ActionsModel released"))
                 .detach();
             LActions::new(update_sender, cx)
         });

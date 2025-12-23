@@ -25,8 +25,9 @@ use bonsaidb::{
     local::Database,
 };
 use gpui::{
-    AnyEntity, App, AsyncApp, AvailableSpace, Bounds, Context, Entity, FontWeight, ImageSource,
-    IntoElement, ListAlignment, ListState, Render, WeakEntity, Window, canvas, div, img, list,
+    AnyEntity, AnyView, App, AsyncApp, AvailableSpace, Bounds, Context, Entity, FontWeight,
+    ImageSource, IntoElement, ListAlignment, ListState, Render, WeakEntity, Window, canvas, div,
+    img, list, px,
 };
 use image::{DynamicImage, ImageBuffer};
 use jiff::{Span, Timestamp, ToSpan};
@@ -399,56 +400,54 @@ impl ClipboardPreview {
             item,
             detail: detail.clone(),
             bounds: bounds.clone(),
-            state: ListState::new(
-                1,
-                ListAlignment::Top,
-                Pixels(100.0),
-                move |_, cx| match detail.kind.clone() {
-                    ClipboardKind::Text { text, .. } | ClipboardKind::Url { url: text, .. } => {
-                        div().p_2().w_full().child(text.clone()).into_any_element()
+            state: ListState::new(1, ListAlignment::Top, px(100.0), move |_, cx| match detail
+                .kind
+                .clone()
+            {
+                ClipboardKind::Text { text, .. } | ClipboardKind::Url { url: text, .. } => {
+                    div().p_2().w_full().child(text.clone()).into_any_element()
+                }
+                ClipboardKind::Image {
+                    width,
+                    height,
+                    path,
+                    ..
+                } => {
+                    let bounds = bounds.read(cx);
+                    let (mut w, mut h) = if height < width {
+                        (
+                            bounds.size.width.0,
+                            bounds.size.width.0 * height as f32 / width as f32,
+                        )
+                    } else {
+                        (
+                            bounds.size.width.0 * width as f32 / height as f32,
+                            bounds.size.width.0,
+                        )
+                    };
+                    if w > bounds.size.width.0 {
+                        h *= bounds.size.width.0 / w;
+                        w = bounds.size.width.0;
                     }
-                    ClipboardKind::Image {
-                        width,
-                        height,
-                        path,
-                        ..
-                    } => {
-                        let bounds = bounds.read(cx);
-                        let (mut w, mut h) = if height < width {
-                            (
-                                bounds.size.width.0,
-                                bounds.size.width.0 * height as f32 / width as f32,
-                            )
-                        } else {
-                            (
-                                bounds.size.width.0 * width as f32 / height as f32,
-                                bounds.size.width.0,
-                            )
-                        };
-                        if w > bounds.size.width.0 {
-                            h *= bounds.size.width.0 / w;
-                            w = bounds.size.width.0;
-                        }
-                        if h > bounds.size.height.0 {
-                            w *= bounds.size.height.0 / h;
-                            h = bounds.size.height.0;
-                        }
-                        let ml = (bounds.size.width.0 - w) / 2.0;
-                        let mt = (bounds.size.height.0 - h) / 2.0;
+                    if h > bounds.size.height.0 {
+                        w *= bounds.size.height.0 / h;
+                        h = bounds.size.height.0;
+                    }
+                    let ml = (bounds.size.width.0 - w) / 2.0;
+                    let mt = (bounds.size.height.0 - h) / 2.0;
 
-                        div()
-                            .child(
-                                img(ImageSource::File(Arc::new(path.clone())))
-                                    .w(Pixels(w))
-                                    .h(Pixels(h)),
-                            )
-                            .pl(Pixels(ml))
-                            .pt(Pixels(mt))
-                            .size_full()
-                            .into_any_element()
-                    }
-                },
-            ),
+                    div()
+                        .child(
+                            img(ImageSource::File(Arc::new(path.clone())))
+                                .w(Pixels(w))
+                                .h(Pixels(h)),
+                        )
+                        .pl(Pixels(ml))
+                        .pt(Pixels(mt))
+                        .size_full()
+                        .into_any_element()
+                }
+            }),
         }
     }
 }
@@ -585,7 +584,7 @@ impl Render for ClipboardPreview {
 command!(ClipboardPreview);
 
 impl StateViewBuilder for ClipboardPreview {
-    fn build(&self, _context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(&self, _context: &mut StateViewContext, cx: &mut App) -> AnyView {
         cx.new(|_| self.clone()).into()
     }
 }

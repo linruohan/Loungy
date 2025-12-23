@@ -54,7 +54,7 @@ impl TextInputWeak {
     }
     pub fn set_placeholder<C: AppContext>(&self, placeholder: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.placeholder = placeholder.to_string();
                 cx.notify();
             });
@@ -62,7 +62,7 @@ impl TextInputWeak {
     }
     pub fn set_text<C: AppContext>(&self, text: impl ToString, cx: &mut C) {
         if let Some(view) = self.view.upgrade() {
-            cx.update_view(&view, |editor: &mut TextView, cx| {
+            cx.update_entity(&view, |editor: &mut TextView, cx| {
                 editor.set_text(text, cx);
             });
         }
@@ -74,8 +74,8 @@ impl TextInputWeak {
             });
         }
     }
-    pub fn has_focus(&self, cx: &App) -> bool {
-        if let Some(fh) = cx.focused() {
+    pub fn has_focus(&self, window: &mut Window, cx: &mut App) -> bool {
+        if let Some(fh) = window.focused(cx) {
             return fh.eq(&self.focus_handle);
         }
         false
@@ -101,8 +101,7 @@ impl TextView {
         };
         let view = cx.new(|cx| {
             #[cfg(debug_assertions)]
-            cx.on_release(|_, _, _| debug!("Text Input released"))
-                .detach();
+            cx.on_release(|_, _| debug!("Text Input released")).detach();
             cx.on_blur(focus_handle, window, |_: &mut TextView, window, cx| {
                 cx.emit(TextEvent::Blur);
             })
@@ -200,13 +199,13 @@ pub enum TextEvent {
 impl EventEmitter<TextEvent> for TextView {}
 
 impl RenderOnce for TextInput {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
-        cx.focus(&self.focus_handle);
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        window.focus(&self.focus_handle, cx);
         //let theme = cx.global::<Theme>();
         let clone = self.view.clone();
         div()
             .track_focus(&self.focus_handle)
-            .on_key_down(move |ev, cx| {
+            .on_key_down(move |ev, _, cx| {
                 self.view.update(cx, |editor, cx| {
                     let prev = editor.text.clone();
                     cx.emit(TextEvent::KeyDown(ev.clone()));
@@ -361,9 +360,9 @@ impl Render for TextView {
             highlights = vec![];
         }
 
-        let styled_text = StyledText::new(text + " ").with_highlights(&highlights);
-        let view = cx.view().clone();
-        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, cx| {
+        let styled_text = StyledText::new(text + " ").with_highlights(highlights);
+        let view = cx.entity().clone();
+        InteractiveText::new("text", styled_text).on_click(self.word_ranges(), move |ev, _, cx| {
             view.update(cx, |editor, cx| {
                 let (index, mut count) = editor.word_click;
                 if index == ev {

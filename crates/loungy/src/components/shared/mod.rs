@@ -24,7 +24,7 @@ use futures::future::Shared;
 use gpui::{
     Animation, AnimationExt, App, AppContext, Context, Entity, Hsla, ImageSource, IntoElement,
     ParentElement, Render, RenderOnce, Resource, SharedUri, Styled, StyledImage, Transformation,
-    VisualContext, Window, div, img, percentage, svg,
+    Window, div, img, percentage, svg,
 };
 use log::debug;
 use parking_lot::Mutex;

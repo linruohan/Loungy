@@ -10,10 +10,10 @@
  */
 
 use gpui::{
-    AnyElement, AnyEntity, App, AppContext, Context, Div, Entity, EventEmitter, FontWeight,
+    AnyElement, AnyEntity, App, AppContext, Context, Entity, EventEmitter, FontWeight,
     InteractiveElement, IntoElement, ListAlignment, ListOffset, ListScrollEvent, ListState,
-    MouseButton, ParentElement, Pixels, Render, RenderOnce, SharedString, Stateful, Styled, Window,
-    actions, div, list, relative,
+    MouseButton, ParentElement, Render, RenderOnce, SharedString, Styled, Window, div, list, px,
+    relative,
 };
 use std::{
     collections::{HashMap, hash_map::DefaultHasher},
@@ -252,8 +252,8 @@ impl Item {
     }
 }
 
-pub trait Preview: Fn(&mut Window) -> StateItem + 'static {}
-impl<F> Preview for F where F: Fn(&mut Window) -> StateItem + 'static {}
+pub trait Preview: Fn(&mut App) -> StateItem + 'static {}
+impl<F> Preview for F where F: Fn(&mut App) -> StateItem + 'static {}
 
 impl RenderOnce for Item {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
@@ -278,7 +278,7 @@ impl RenderOnce for Item {
     }
 }
 
-type ScrollHandler = Option<Box<dyn FnMut(&ListScrollEvent, &mut Window)>>;
+type ScrollHandler = Option<Box<dyn FnMut(&ListScrollEvent, &mut Window, &mut App)>>;
 
 pub struct ListBuilder {
     reverse: bool,
@@ -319,7 +319,7 @@ impl ListBuilder {
     }
     pub fn scroll_handler(
         mut self,
-        handler: impl FnMut(&ListScrollEvent, &mut Window) + 'static,
+        handler: impl FnMut(&ListScrollEvent, &mut Window, &mut App) + 'static,
     ) -> Self {
         self.scroll_handler = Some(Box::new(handler));
         self
@@ -328,6 +328,7 @@ impl ListBuilder {
         self,
         update: impl UpdateList + 'static,
         context: &mut StateViewContext,
+        window: &mut Window,
         cx: &mut App,
     ) -> Entity<List> {
         List::new(
@@ -338,6 +339,7 @@ impl ListBuilder {
             self.reverse,
             self.scroll_handler,
             context,
+            window,
             cx,
         )
     }
@@ -378,7 +380,10 @@ impl Render for List {
             .map(|p| {
                 (
                     relative(1.0 - p.1),
-                    div().child(p.2.view.into()).w(relative(p.1)).pl_1(),
+                    div()
+                        .child(p.2.view.clone().into_any_element())
+                        .w(relative(p.1))
+                        .pl_1(),
                 )
             })
             .unwrap_or((relative(1.0), div()));
@@ -435,8 +440,8 @@ impl Render for List {
 }
 
 impl List {
-    pub fn up(&mut self, cx: &mut Context<Self>) {
-        if !self.query.has_focus(cx) {
+    pub fn up(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.query.has_focus(window, cx) {
             return;
         }
         let index = if let Some((index, _)) = self.selected(cx) {
@@ -457,8 +462,8 @@ impl List {
         });
         self.state.scroll_to_reveal_item(index);
     }
-    pub fn down(&mut self, cx: &mut Context<Self>) {
-        if !self.query.has_focus(cx) {
+    pub fn down(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.query.has_focus(window, cx) {
             return;
         }
         let index = if let Some((index, _)) = self.selected(cx) {
@@ -553,7 +558,7 @@ impl List {
             });
             self.state.scroll_to(ListOffset {
                 item_ix: s,
-                offset_in_item: Pixels(0.0),
+                offset_in_item: px(0.0),
             })
         });
     }
@@ -566,6 +571,7 @@ impl List {
         reverse: bool,
         scroll_handler: ScrollHandler,
         context: &mut StateViewContext,
+        window: &mut Window,
         cx: &mut App,
     ) -> Entity<Self> {
         let (selection_sender, r) = channel::<u64>();
@@ -579,7 +585,7 @@ impl List {
                 } else {
                     ListAlignment::Top
                 },
-                Pixels(20.0),
+                px(20.0),
             ),
             selected,
             items_all: vec![],
@@ -630,19 +636,17 @@ impl List {
                 cx.notify();
             })
             .detach();
-            let view = cx.entity().clone();
-            cx.spawn(async move |cx| {
+            cx.spawn(async move |view, cx| {
                 let mut last = std::time::Instant::now();
                 loop {
                     if let Some(view) = view.upgrade() {
                         let poll = interval.map(|i| last.elapsed() > i).unwrap_or(false);
                         if let Ok(selected) = r.try_recv() {
-                            let _ = view.update(&mut cx, |this: &mut Self, cx| {
+                            let _ = view.update(cx, |this: &mut Self, cx| {
                                 this.selected.update(cx, |this, cx| {
                                     *this = selected;
                                     cx.notify();
                                 });
-                                cx.notify();
                             });
                         }
                         let triggered = update_receiver.try_recv().is_ok();
@@ -651,7 +655,7 @@ impl List {
                             this.update(triggered, cx);
                             last = std::time::Instant::now();
                         };
-                        if (poll || triggered) && view.update(&mut cx, update).is_err() {
+                        if (poll || triggered) && view.update(cx, update).is_err() {
                             debug!("List view released");
                             break;
                         }
@@ -683,12 +687,12 @@ impl List {
                     TextEvent::KeyDown(ev) => match ev.keystroke.key.as_str() {
                         "up" => {
                             clone.update(cx, |this, cx| {
-                                this.up(cx);
+                                this.up(window, cx);
                             });
                         }
                         "down" => {
                             clone.update(cx, |this, cx| {
-                                this.down(cx);
+                                this.down(window, cx);
                             });
                         }
                         _ => {}
@@ -699,42 +703,6 @@ impl List {
             .detach();
         }
         view
-    }
-    fn render_list(&mut self, _: &mut Window, cx: &mut App) -> Stateful<Div> {
-        let selected = self.selected.clone();
-        let items = self.items.clone();
-        let sender = self.selection_sender.clone();
-        let actions = self.actions.clone();
-        move |i, cx| {
-            let mut item = items.read(cx)[i].clone();
-            let selected = item.id.eq(selected.read(cx));
-            item.selected = selected;
-            let action = item.actions.first().cloned();
-            let actions = actions.inner.upgrade();
-            if actions.is_none() {
-                return div().into_any_element();
-            }
-            let actions = actions.unwrap().read(cx).clone();
-            let sender = sender.clone();
-            let id = item.id;
-            div()
-                .child(item)
-                .on_mouse_down(MouseButton::Left, {
-                    move |ev, cx| match ev.click_count {
-                        1 => {
-                            let _ = sender.send(id);
-                        }
-                        2 => {
-                            let mut actions = actions.clone();
-                            if let Some(action) = &action {
-                                (action.action)(&mut actions, cx);
-                            }
-                        }
-                        _ => {}
-                    }
-                })
-                .into_any_element()
-        }
     }
 }
 

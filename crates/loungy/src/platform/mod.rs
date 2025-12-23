@@ -10,7 +10,7 @@
  */
 
 use crate::components::shared::Img;
-use gpui::{App, AsyncApp, BorrowAppContext, Global};
+use gpui::{App, AppContext, AsyncApp, BorrowAppContext, Global};
 
 #[cfg(target_os = "linux")]
 mod linux;
@@ -54,8 +54,7 @@ impl ClipboardWatcher {
         });
     }
     pub fn is_enabled(cx: &App) -> bool {
-        cx.try_read_global::<Self, _>(|x, _| x.enabled)
-            .unwrap_or(false)
+        cx.read_global::<Self, _>(|x, _| x.enabled)
     }
 }
 impl Global for ClipboardWatcher {}

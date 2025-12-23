@@ -16,9 +16,9 @@ use crate::{
     theme::LTheme,
 };
 use gpui::{
-    App, AppContext, Context, Entity, FontWeight, InteractiveElement, IntoElement, Keystroke,
-    ListAlignment, ListState, Modifiers, MouseButton, ParentElement, Pixels, Render, Styled,
-    Window, div, list,
+    div, list, px, App, AppContext, Context, Entity, FontWeight,
+    InteractiveElement, IntoElement, Keystroke, ListAlignment, ListState, Modifiers, MouseButton, ParentElement, Render,
+    Styled, Window,
 };
 use std::{any::Any, collections::HashMap};
 
@@ -355,7 +355,7 @@ pub enum InputKind {
     },
 }
 
-pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut Window) {
+pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut App) {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
         Self: 'a;
@@ -363,7 +363,7 @@ pub trait SubmitFn: Fn(HashMap<String, Input>, &mut LActions, &mut Window) {
 
 impl<F> SubmitFn for F
 where
-    F: Fn(HashMap<String, Input>, &mut LActions, &mut Window) + Clone,
+    F: Fn(HashMap<String, Input>, &mut LActions, &mut App) + Clone,
 {
     fn clone_box<'a>(&self) -> Box<dyn 'a + SubmitFn>
     where
@@ -440,20 +440,18 @@ impl Form {
         }
 
         cx.new(|_| Self {
-            list: ListState::new(inputs.len(), ListAlignment::Top, Pixels(100.0)),
+            list: ListState::new(inputs.len(), ListAlignment::Top, px(100.0)),
             inputs,
         })
     }
 }
 
 impl Render for Form {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        let inputs = self.inputs.clone();
         div().p_4().size_full().child(
-            list(self.list.clone(), move |i, _| {
-                div()
-                    .child(self.inputs[i].clone())
-                    .py_2()
-                    .into_any_element()
+            list(self.list.clone(), move |i, _, _| {
+                div().child(inputs[i].clone()).py_2().into_any_element()
             })
             .size_full(),
         )

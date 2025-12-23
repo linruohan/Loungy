@@ -9,7 +9,7 @@
  *
  */
 
-use gpui::{AnyEntity, App, ClipboardItem, Window};
+use gpui::{AnyEntity, AnyView, App, ClipboardItem, Window};
 use jiff::Timestamp;
 use nucleo::Status;
 use serde::Deserialize;
@@ -60,7 +60,7 @@ pub struct TailscaleListBuilder;
 
 command!(TailscaleListBuilder);
 impl StateViewBuilder for TailscaleListBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search for peers...", cx);
         context.actions.set_dropdown(
             "online",

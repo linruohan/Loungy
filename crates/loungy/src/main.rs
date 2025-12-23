@@ -15,7 +15,7 @@
 #![allow(dead_code)]
 
 use app::run_app;
-use gpui::{App, Application};
+use gpui::Application;
 use ipc::{client::client_connect, server::setup_socket};
 
 mod app;

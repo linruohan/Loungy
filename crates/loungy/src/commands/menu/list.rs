@@ -9,7 +9,7 @@
  *
  */
 
-use gpui::{AnyEntity, App, Keystroke, Window};
+use gpui::{AnyEntity, AnyView, App, Keystroke, Window};
 use serde::Deserialize;
 use serde_json::Value;
 use std::time::Duration;
@@ -44,12 +44,7 @@ swift!( pub fn menu_item_select(data: SRData));
 pub struct MenuListBuilder;
 command!(MenuListBuilder);
 impl StateViewBuilder for MenuListBuilder {
-    fn build(
-        &self,
-        context: &mut StateViewContext,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> AnyEntity {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search for menu items...", cx);

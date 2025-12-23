@@ -73,7 +73,13 @@ impl Render for Workspace {
                     .w_full(),
             )
             .child(ActiveLoaders {})
-            .child(div().flex_1().size_full().p_2().child(view.view.into()))
+            .child(
+                div()
+                    .flex_1()
+                    .size_full()
+                    .p_2()
+                    .child(view.view.clone().into_any_element()),
+            )
             .child(
                 div()
                     .mt_auto()

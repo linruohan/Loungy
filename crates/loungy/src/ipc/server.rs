@@ -155,7 +155,7 @@ pub async fn setup_socket() -> anyhow::Result<PlatformListener> {
         Ok(PlatformListener::Tcp(listener))
     }
 }
-pub async fn start_server(listener: PlatformListener, mut cx: AsyncApp) -> anyhow::Result<()> {
+pub async fn start_server(listener: PlatformListener, cx: AsyncApp) -> anyhow::Result<()> {
     let commands = cx.read_global::<RootCommands, _>(|commands, _| commands.clone())?;
     loop {
         let (stream, _) = listener.accept().await?;
@@ -174,7 +174,7 @@ pub async fn start_server(listener: PlatformListener, mut cx: AsyncApp) -> anyho
 async fn handle_client(
     mut stream: PlatformStream,
     commands: RootCommands,
-    mut cx: AsyncApp,
+    cx: &mut AsyncApp,
 ) -> anyhow::Result<()> {
     // Send available commands to the client
     let bytes = serde_json::to_vec(&commands)?;

@@ -9,7 +9,7 @@
  *
  */
 
-use gpui::{AnyEntity, App, Global, Window};
+use gpui::{AnyView, App, Global, Window};
 use log::error;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, rc::Rc};
@@ -178,7 +178,7 @@ pub struct HotkeyBuilder {
 }
 command!(HotkeyBuilder);
 impl StateViewBuilder for HotkeyBuilder {
-    fn build(&self, context: &mut StateViewContext, cx: &mut App) -> AnyEntity {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         let id = self.id.clone();
         let value = HotkeyManager::get(&id).map(Shortcut::new);
         Form::new(

@@ -19,7 +19,7 @@ use bonsaidb::{
     core::schema::{Collection, SerializedCollection},
     local::Database,
 };
-use gpui::{AnyEntity, App, AsyncApp, Entity, Window};
+use gpui::{AnyEntity, AnyView, App, AsyncApp, Entity, Window};
 use log::error;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -49,12 +49,7 @@ pub struct BitwardenListBuilder {
 }
 command!(BitwardenListBuilder);
 impl StateViewBuilder for BitwardenListBuilder {
-    fn build(
-        &self,
-        context: &mut StateViewContext,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> AnyEntity {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your vault...", cx);
         if let Ok(accounts) = BitwardenAccount::all(db()).query() {
             if accounts.len() > 1 {

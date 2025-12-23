@@ -123,7 +123,7 @@ pub struct NumbatWrapper {
 }
 
 impl ItemComponent for NumbatWrapper {
-    fn render(&self, _selected: bool, _cx: &Window) -> AnyElement {
+    fn render(&self, _selected: bool, _cx: &App) -> AnyElement {
         self.inner.clone().into_any_element()
     }
 }

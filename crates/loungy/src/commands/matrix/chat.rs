@@ -261,7 +261,7 @@ impl ItemComponent for Message {
                 };
                 el
             }
-            .flex_basis(Pixels(0.0))
+            .flex_basis(px(0.0))
             .max_w_4_5()
             .p_2()
             .bg(if selected {

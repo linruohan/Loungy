@@ -450,9 +450,9 @@ pub fn copy_files_to_clipboard(paths: &[&Path]) -> Result<(), windows::core::Err
 pub fn close_and_paste(value: &str, formatting: bool, window: &mut Window, cx: &mut App) {
     LWindow::close(cx);
     let value = value.to_string();
-    cx.spawn(move |mut cx| async move {
-        LWindow::wait_for_close(window, &mut cx).await;
-        ClipboardWatcher::disabled(&mut cx);
+    cx.spawn_in(window, async move |view, cx| {
+        LWindow::wait_for_close(window, cx).await;
+        ClipboardWatcher::disabled(cx);
 
         // Windows实现：根据formatting决定使用ANSI还是Unicode
         let use_unicode = formatting; // 简化：formatting为true时用Unicode
@@ -464,9 +464,9 @@ pub fn close_and_paste(value: &str, formatting: bool, window: &mut Window, cx: &
 pub fn close_and_paste_file(path: &Path, window: &mut Window, cx: &mut App) {
     LWindow::close(cx);
     let path = path.to_path_buf();
-    cx.spawn(move |mut cx| async move {
-        LWindow::wait_for_close(window, &mut cx).await;
-        ClipboardWatcher::disabled(&mut cx);
+    cx.spawn(async move |view, cx| {
+        LWindow::wait_for_close(window, cx).await;
+        ClipboardWatcher::disabled(cx);
 
         let _ = copy_file_to_clipboard(&path);
     })

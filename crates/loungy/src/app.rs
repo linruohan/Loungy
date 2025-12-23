@@ -35,7 +35,7 @@ pub fn run_app(listener: PlatformListener, app: gpui::Application) {
             cx.set_background_appearance(WindowBackgroundAppearance::from(
                 theme.window_background.clone().unwrap_or_default(),
             ));
-            RootCommands::init(cx);
+            RootCommands::init(window, cx);
             cx.spawn(|cx| start_server(listener, cx)).detach();
             HotkeyManager::init(cx);
             let view = Workspace::build(window, cx);

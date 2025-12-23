@@ -21,22 +21,16 @@ use crate::{
     state::{CommandTrait, LAction, StateViewBuilder, StateViewContext},
     window::LWindow,
 };
-use gpui::{AnyEntity, App, ClipboardItem, Window};
+use gpui::{AnyView, App, ClipboardItem, Window};
 use notify::Watcher;
 use notify_debouncer_full::new_debouncer;
-use std::process::id;
 use std::{collections::HashMap, time::Duration};
 
 #[derive(Clone)]
 pub struct RootListBuilder;
 command!(RootListBuilder);
 impl StateViewBuilder for RootListBuilder {
-    fn build(
-        &self,
-        context: &mut StateViewContext,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> AnyEntity {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context
             .query
             .set_placeholder("Search for apps and commands...", cx);
@@ -74,6 +68,7 @@ impl StateViewBuilder for RootListBuilder {
                                         this.toast.floating(
                                             "Copied to clipboard",
                                             Some(Icon::Clipboard),
+                                            window,
                                             cx,
                                         );
                                         LWindow::close(cx);
@@ -116,7 +111,7 @@ impl StateViewBuilder for RootListBuilder {
                                 format!("Open {}", data.tag.clone()),
                                 None,
                                 {
-                                    let id = data.id.clone();
+                                    let data_id = data.id.clone();
                                     let tag = data.tag.clone();
 
                                     #[cfg(target_os = "macos")]
@@ -124,16 +119,16 @@ impl StateViewBuilder for RootListBuilder {
                                         let ex = data.tag == "System Setting";
                                         move |_, cx| {
                                             LWindow::close(cx);
-                                            let id = id.clone();
+                                            let data_id = data_id.clone();
                                             let mut command = std::process::Command::new("open");
                                             if ex {
                                                 command.arg(format!(
                                                     "x-apple.systempreferences:{}",
-                                                    id
+                                                    data_id
                                                 ));
                                             } else {
                                                 command.arg("-b");
-                                                command.arg(id);
+                                                command.arg(data_id);
                                             }
                                             let _ = command.spawn();
                                         }
@@ -144,16 +139,16 @@ impl StateViewBuilder for RootListBuilder {
                                             LWindow::close(cx);
                                             let mut command =
                                                 std::process::Command::new("gtk-launch");
-                                            command.arg(id.clone());
+                                            command.arg(data_id.clone());
                                             let _ = command.spawn();
                                         }
                                     }
                                     #[cfg(target_os = "windows")]
                                     {
                                         let is_system_setting = tag == "System Setting";
-                                        let is_app_id =
-                                            id.contains(':') || id.starts_with("ms-settings:");
-                                        let id_clone = id.clone();
+                                        let is_app_id = data_id.contains(':')
+                                            || data_id.starts_with("ms-settings:");
+                                        let id_clone = data_id.clone();
 
                                         move |_, cx| {
                                             LWindow::close(cx);
@@ -228,7 +223,7 @@ impl StateViewBuilder for RootListBuilder {
 
             loop {
                 if rx.try_recv().is_ok() {
-                    let _ = list_clone.update(&mut cx, |this, cx| {
+                    let _ = list_clone.update(cx, |this, cx| {
                         this.update(true, cx);
                     });
                 };

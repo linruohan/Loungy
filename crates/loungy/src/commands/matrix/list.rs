@@ -13,7 +13,7 @@ use std::{cmp::Reverse, collections::HashMap, sync::Arc};
 
 use async_std::{stream::StreamExt, task::spawn};
 use bonsaidb::core::schema::SerializedCollection;
-use gpui::{AnyEntity, App, AsyncApp, Entity, WeakEntity, Window};
+use gpui::{AnyEntity, AnyView, App, AsyncApp, Entity, WeakEntity, Window};
 use matrix_sdk::ruma::OwnedRoomId;
 use matrix_sdk_ui::{sync_service::State, timeline::RoomExt};
 
@@ -44,12 +44,7 @@ struct RoomList {
 
 command!(RoomList);
 impl StateViewBuilder for RoomList {
-    fn build(
-        &self,
-        context: &mut StateViewContext,
-        window: &mut Window,
-        cx: &mut App,
-    ) -> AnyEntity {
+    fn build(&self, context: &mut StateViewContext, window: &mut Window, cx: &mut App) -> AnyView {
         context.query.set_placeholder("Search your rooms...", cx);
         if let Ok(accounts) = Session::all(db()).query() {
             if accounts.len() > 1 {

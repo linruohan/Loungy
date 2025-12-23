@@ -70,8 +70,8 @@ pub struct LWindow {
 impl LWindow {
     pub fn init(window: &mut Window, cx: &mut App) {
         let view = cx.new(|cx| {
-            cx.observe_window_activation(window, |_, _, cx| {
-                if cx.is_window_active() {
+            cx.observe_window_activation(window, |_, window, cx| {
+                if window.is_window_active() {
                     return;
                 };
                 LWindow::close(cx);
@@ -132,8 +132,10 @@ impl LWindow {
         .detach();
     }
     pub async fn wait_for_close(window: &mut Window, cx: &mut AsyncApp) {
-        while let Ok(active) =
-            cx.update_window::<bool, _>(window.window_handle(), |_, cx| cx.is_window_active())
+        while let Ok(active) = cx
+            .update_window::<bool, _>(window.window_handle(), |_, window, _| {
+                window.is_window_active()
+            })
         {
             if !active {
                 break;
