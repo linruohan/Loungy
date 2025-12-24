@@ -211,6 +211,7 @@ impl StateViewBuilder for ProcessListBuilder {
                     ))
                 },
                 context,
+                window,
                 cx,
             )
             .into()

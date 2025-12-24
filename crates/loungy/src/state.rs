@@ -23,7 +23,7 @@ use gpui::{
     Animation, AnimationExt, AnyElement, AnyEntity, AnyView, App, AppContext, AsyncApp,
     BorrowAppContext, Bounds, Context, Div, Entity, FontWeight, Global, Hsla, IntoElement,
     Keystroke, Modifiers, ParentElement, Pixels, Point, Render, RenderOnce, SharedString, Size,
-    Styled, VisualContext, WeakEntity, Window, bounce, div, ease_in_out, px, relative, svg,
+    Styled, WeakEntity, Window, bounce, div, ease_in_out, px, relative, svg,
 };
 use log::debug;
 use parking_lot::{Mutex, MutexGuard};
@@ -115,11 +115,11 @@ impl ToastState {
             )
             .into_any_element()
     }
-    pub fn timeout(&mut self, duration: Duration, cx: &mut Context<Self>) {
-        cx.spawn(async move |view, cx| {
+    pub fn timeout(&mut self, duration: Duration, window: &mut Window, cx: &mut Context<Self>) {
+        cx.spawn_in(window, async move |view: WeakEntity<ToastState>, cx| {
             cx.background_executor().timer(duration).await;
             // cx.background_executor().timer(duration).await;
-            let _ = view.update(&mut cx, |this, cx| {
+            let _ = view.update_in(cx, |this, window, cx| {
                 *this = ToastState::Idle;
                 cx.notify();
             });
@@ -1047,6 +1047,7 @@ impl LActionsModel {
                     ))
                 },
                 &mut context,
+                window,
                 cx,
             );
             let list_clone = list.downgrade();

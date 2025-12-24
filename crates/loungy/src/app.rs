@@ -17,7 +17,7 @@ use crate::{
     window::{LWindow, LWindowStyle},
     workspace::Workspace,
 };
-use gpui::{App, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
+use gpui::{App, AppContext, Bounds, Pixels, Point, Size, WindowBackgroundAppearance};
 use loungy_assets::Assets;
 pub fn run_app(listener: PlatformListener, app: gpui::Application) {
     app.with_assets(Assets).run(move |cx: &mut App| {
@@ -32,7 +32,7 @@ pub fn run_app(listener: PlatformListener, app: gpui::Application) {
         });
         let _ = cx.open_window(LWindowStyle::Main.options(bounds), |window, cx| {
             let theme = cx.global::<LTheme>();
-            cx.set_background_appearance(WindowBackgroundAppearance::from(
+            cx.background_spawn(WindowBackgroundAppearance::from(
                 theme.window_background.clone().unwrap_or_default(),
             ));
             RootCommands::init(window, cx);

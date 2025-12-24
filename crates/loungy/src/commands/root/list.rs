@@ -14,7 +14,7 @@ use crate::{
     command,
     commands::{RootCommand, RootCommandBuilder, RootCommands},
     components::{
-        list::{Accessory, Item, ItemBuilder, ListBuilder, ListItem, nucleo::fuzzy_match},
+        list::{nucleo::fuzzy_match, Accessory, Item, ItemBuilder, ListBuilder, ListItem},
         shared::{Icon, Img},
     },
     platform::{get_application_data, get_application_files, get_application_folders},
@@ -206,6 +206,7 @@ impl StateViewBuilder for RootListBuilder {
                     }
                 },
                 context,
+                window,
                 cx,
             );
 

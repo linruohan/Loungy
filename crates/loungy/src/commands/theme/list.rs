@@ -129,6 +129,7 @@ impl StateViewBuilder for ThemeListBuilder {
                     ))
                 },
                 context,
+                window,
                 cx,
             )
             .into()
